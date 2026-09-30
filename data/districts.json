@@ -116,6 +116,19 @@
         "lng": 114.1178
       },
       "card_count": 1437
+    },
+    {
+      "id": "tm",
+      "name": "屯門",
+      "openrice_district_id": 3005,
+      "origin": {
+        "id": "tm-station",
+        "label": "屯門站",
+        "address": "屯門杯渡路",
+        "lat": 22.3952,
+        "lng": 113.9731
+      },
+      "card_count": 1390
     }
   ]
 }
