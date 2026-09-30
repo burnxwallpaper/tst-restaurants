@@ -130,7 +130,91 @@ DISTRICTS = {
             "lat": 22.301111,
             "lng": 114.172222,
         },
-    }
+    },
+    "pe": {
+        "id": "pe",
+        "name": "太子",
+        "openrice_district_id": 2029,
+        "origin": {
+            "id": "pe-station",
+            "label": "太子站",
+            "address": "太子彌敦道",
+            "lat": 22.3245,
+            "lng": 114.1683,
+        },
+    },
+    "mk": {
+        "id": "mk",
+        "name": "旺角",
+        "openrice_district_id": 2010,
+        "origin": {
+            "id": "mk-station",
+            "label": "旺角站",
+            "address": "旺角彌敦道",
+            "lat": 22.3191,
+            "lng": 114.1694,
+        },
+    },
+    "ssp": {
+        "id": "ssp",
+        "name": "深水埗",
+        "openrice_district_id": 2019,
+        "origin": {
+            "id": "ssp-station",
+            "label": "深水埗站",
+            "address": "深水埗長沙灣道",
+            "lat": 22.3307,
+            "lng": 114.1623,
+        },
+    },
+    "jordan": {
+        "id": "jordan",
+        "name": "佐敦",
+        "openrice_district_id": 2028,
+        "origin": {
+            "id": "jordan-station",
+            "label": "佐敦站",
+            "address": "佐敦彌敦道",
+            "lat": 22.3049,
+            "lng": 114.1718,
+        },
+    },
+    "ymt": {
+        "id": "ymt",
+        "name": "油麻地",
+        "openrice_district_id": 2011,
+        "origin": {
+            "id": "ymt-station",
+            "label": "油麻地站",
+            "address": "油麻地彌敦道",
+            "lat": 22.3129,
+            "lng": 114.1707,
+        },
+    },
+    "csw": {
+        "id": "csw",
+        "name": "長沙灣",
+        "openrice_district_id": 2013,
+        "origin": {
+            "id": "csw-station",
+            "label": "長沙灣站",
+            "address": "長沙灣長沙灣道",
+            "lat": 22.3354,
+            "lng": 114.1563,
+        },
+    },
+    "lck": {
+        "id": "lck",
+        "name": "荔枝角",
+        "openrice_district_id": 2016,
+        "origin": {
+            "id": "lck-station",
+            "label": "荔枝角站",
+            "address": "荔枝角長沙灣道",
+            "lat": 22.3373,
+            "lng": 114.1482,
+        },
+    },
 }
 ACTIVE = DISTRICTS["tst"]
 
@@ -224,7 +308,7 @@ def http_get(url: str, limiter: Limiter, *, referer: str) -> tuple[int, bytes]:
         },
     )
     last_error: Exception | None = None
-    for attempt in range(3):
+    for attempt in range(5):
         try:
             with limiter.slot():
                 with urllib.request.urlopen(req, timeout=45) as resp:
@@ -797,7 +881,7 @@ def search_page(start_at: int, *, use_cache: bool, price_range_id: int | None = 
     payload = fetch_json(
         url,
         OPENRICE,
-        referer="https://www.openrice.com/zh/hongkong/restaurants?districtId=2008",
+        referer=f"https://www.openrice.com/zh/hongkong/restaurants?districtId={DISTRICT_ID}",
     )
     write_json(path, payload)
     return payload
@@ -812,12 +896,27 @@ def search_results(page: dict) -> list[dict]:
     return []
 
 
-def paginate(seen: set[int], *, use_cache: bool, price_range_id: int | None, max_scan: int) -> list[dict]:
+def page_count(page: dict) -> int | None:
+    pagination = page.get("paginationResult")
+    if not isinstance(pagination, dict):
+        return None
+    count = pagination.get("count")
+    if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
+        return count
+    return None
+
+
+def paginate(
+    seen: set[int], *, use_cache: bool, price_range_id: int | None, max_scan: int
+) -> tuple[list[dict], int | None]:
     chosen: list[dict] = []
     start = 0
     stale_pages = 0
+    reported: int | None = None
     while start < max_scan:
         page = search_page(start, use_cache=use_cache, price_range_id=price_range_id)
+        if reported is None:
+            reported = page_count(page)
         results = search_results(page)
         if not results:
             break
@@ -825,7 +924,7 @@ def paginate(seen: set[int], *, use_cache: bool, price_range_id: int | None, max
         for row in results:
             poi_id = row.get("poiId")
             name = row.get("name")
-            if not isinstance(poi_id, int) or poi_id in seen:
+            if not isinstance(poi_id, int) or isinstance(poi_id, bool) or poi_id in seen:
                 continue
             if not isinstance(name, str) or not name.strip():
                 continue
@@ -843,20 +942,24 @@ def paginate(seen: set[int], *, use_cache: bool, price_range_id: int | None, max
         if len(results) < SEARCH_ROWS:
             break
         start += SEARCH_ROWS
-    return chosen
+    return chosen, reported
 
 
 def collect_rows(target: int, max_scan: int, *, use_cache: bool) -> list[dict]:
     seen: set[int] = set()
-    chosen = paginate(seen, use_cache=use_cache, price_range_id=None, max_scan=max_scan)
-    if len(chosen) < 2050:
+    chosen, reported = paginate(seen, use_cache=use_cache, price_range_id=None, max_scan=max_scan)
+    if reported is not None and len(chosen) < reported:
+        log(f"district list {len(chosen)} short of {reported}; splitting by price")
         for price_range_id in range(1, 7):
-            chosen.extend(
-                paginate(seen, use_cache=use_cache, price_range_id=price_range_id, max_scan=max_scan)
+            extra, _reported = paginate(
+                seen, use_cache=use_cache, price_range_id=price_range_id, max_scan=max_scan
             )
+            chosen.extend(extra)
+            if len(chosen) >= reported:
+                break
     if target > 0:
         chosen = chosen[:target]
-    log(f"search kept {len(chosen)} restaurants")
+    log(f"search kept {len(chosen)} restaurants reported={reported}")
     return chosen
 
 
@@ -974,6 +1077,28 @@ def collect_album_photos(
     return items, max(total, len(items))
 
 
+def borrowed_album(poi_id: int) -> tuple[Path, dict[str, int]] | None:
+    """Reuse a photo file already stored for this poi in another district."""
+    for slug in DISTRICTS:
+        if slug == ACTIVE["id"]:
+            continue
+        path = ROOT / "data" / slug / "photos" / f"{poi_id}.json"
+        payload = read_json(path)
+        if not payload:
+            continue
+        counts: dict[str, int] = {}
+        complete = True
+        for key in PHOTO_KEYS:
+            total = payload.get(f"{key}_total")
+            if not isinstance(total, int) or isinstance(total, bool) or total < 0:
+                complete = False
+                break
+            counts[key] = total
+        if complete:
+            return path, counts
+    return None
+
+
 def save_album(poi_id: int, *, use_cache: bool) -> dict[str, int]:
     done_path = PHOTO_CACHE / f"{poi_id}.done.json"
     out_path = PHOTO_DIR / f"{poi_id}.json"
@@ -983,6 +1108,16 @@ def save_album(poi_id: int, *, use_cache: bool) -> dict[str, int]:
             counts = {key: int(done[key]) for key in PHOTO_KEYS}
             if not any(counts.values()) or out_path.is_file():
                 return counts
+    borrowed = borrowed_album(poi_id)
+    if borrowed is not None:
+        source, counts = borrowed
+        if any(counts.values()):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, out_path)
+        elif out_path.exists():
+            out_path.unlink()
+        write_json(done_path, counts)
+        return counts
     album: dict[str, list[dict] | int] = {}
     counts: dict[str, int] = {}
     for key, type_id in PHOTO_TYPE_IDS:

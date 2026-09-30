@@ -12,6 +12,19 @@
         "lng": 114.172222
       },
       "card_count": 2132
+    },
+    {
+      "id": "pe",
+      "name": "太子",
+      "openrice_district_id": 2029,
+      "origin": {
+        "id": "pe-station",
+        "label": "太子站",
+        "address": "太子彌敦道",
+        "lat": 22.3245,
+        "lng": 114.1683
+      },
+      "card_count": 430
     }
   ]
 }

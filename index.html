@@ -210,7 +210,14 @@ const ORIGINS = [
     address: "尖沙咀彌敦道132號",
     lat: 22.301111,
     lng: 114.172222
-  }
+  },
+  { id: "pe-station", label: "太子站", address: "太子彌敦道", lat: 22.3245, lng: 114.1683 },
+  { id: "mk-station", label: "旺角站", address: "旺角彌敦道", lat: 22.3191, lng: 114.1694 },
+  { id: "ssp-station", label: "深水埗站", address: "深水埗長沙灣道", lat: 22.3307, lng: 114.1623 },
+  { id: "jordan-station", label: "佐敦站", address: "佐敦彌敦道", lat: 22.3049, lng: 114.1718 },
+  { id: "ymt-station", label: "油麻地站", address: "油麻地彌敦道", lat: 22.3129, lng: 114.1707 },
+  { id: "csw-station", label: "長沙灣站", address: "長沙灣長沙灣道", lat: 22.3354, lng: 114.1563 },
+  { id: "lck-station", label: "荔枝角站", address: "荔枝角長沙灣道", lat: 22.3373, lng: 114.1482 }
 ];
 const DISTANCES = [
   { id: "300", label: "≤300 m", max: 300 },
@@ -293,6 +300,7 @@ let holidaySet = new Set();
 const WEEKDAY_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 let query = "";
 let origin = ORIGINS[0];
+let originPinned = new URLSearchParams(location.search).has("origin") || new URLSearchParams(location.search).has("lat");
 let slides = [];
 let slideIndex = 0;
 const albumCache = new Map();
@@ -639,9 +647,8 @@ function compareMissingLast(left, right) {
   return ascending ? left - right : right - left;
 }
 
-function poolFor(exclude) {
-  return restaurants.filter(item =>
-    matchesQuery(item)
+function rowMatches(item, exclude) {
+  return matchesQuery(item)
     && (exclude === "district" || matchesDistrict(item))
     && (exclude === "distance" || matchesDistance(item))
     && (exclude === "cuisine" || matchesCuisine(item))
@@ -649,14 +656,28 @@ function poolFor(exclude) {
     && (exclude === "status" || matchesStatus(item))
     && (exclude === "booking" || matchesBooking(item))
     && (exclude === "menu" || matchesMenu(item))
-    && (exclude === "opened" || matchesOpened(item))
-  );
+    && (exclude === "opened" || matchesOpened(item));
+}
+
+function dedupeByPoi(list) {
+  const seen = new Set();
+  const out = [];
+  list.forEach(item => {
+    const id = item && item.poi_id;
+    if (seen.has(id)) return;
+    seen.add(id);
+    out.push(item);
+  });
+  return out;
+}
+
+function poolFor(exclude) {
+  return dedupeByPoi(restaurants.filter(item => rowMatches(item, exclude)));
 }
 
 function visibleRestaurants() {
-  return restaurants
+  return dedupeByPoi(restaurants.filter(item => rowMatches(item, "")))
     .map((item, index) => ({ item, index }))
-    .filter(({ item }) => matchesQuery(item) && matchesDistrict(item) && matchesDistance(item) && matchesCuisine(item) && matchesPrice(item) && matchesStatus(item) && matchesBooking(item) && matchesMenu(item) && matchesOpened(item))
     .sort((left, right) => compareMissingLast(sortValue(left.item), sortValue(right.item)) || left.index - right.index)
     .map(({ item }) => item);
 }
@@ -679,11 +700,10 @@ function checkList(group, options) {
 function buildDistrictFilters() {
   const group = document.getElementById("group-district");
   if (group) group.hidden = districtCatalog.length === 0;
-  const pool = poolFor("district");
   const options = districtCatalog.map(item => {
     const loaded = districtData.get(item.id);
     const count = loaded
-      ? pool.filter(row => String(row.district || "") === item.id).length
+      ? loaded.restaurants.filter(row => rowMatches(row, "district")).length
       : (Number(item.card_count) || 0);
     return { id: item.id, label: item.name, count };
   });
@@ -1120,7 +1140,18 @@ function readOrigin() {
   return ORIGINS.find(item => item.id === id) || ORIGINS[0];
 }
 
+function applyDefaultOrigin() {
+  if (originPinned) return;
+  const first = [...selected.district][0];
+  const district = districtCatalog.find(item => item.id === first);
+  const next = district && district.origin;
+  if (!next || typeof next.lat !== "number" || typeof next.lng !== "number" || !next.id) return;
+  origin = next;
+  fillOriginSelect();
+}
+
 function writeOrigin(next, mode) {
+  originPinned = true;
   origin = next;
   const url = new URL(location.href);
   if (mode === "preset") {
@@ -1195,6 +1226,7 @@ groupsEl.addEventListener("change", event => {
   else selected[group].delete(input.value);
   writeFilters();
   if (group === "district") {
+    applyDefaultOrigin();
     ensureRestaurants().then(() => refreshControls()).catch(showLoadError);
     return;
   }
@@ -1651,6 +1683,7 @@ fetch("./data/districts.json")
     const list = payload && Array.isArray(payload.districts) ? payload.districts : [];
     districtCatalog.splice(0, districtCatalog.length, ...list.filter(item => item && item.id && item.name));
     applyDistrictSelection();
+    applyDefaultOrigin();
     return ensureRestaurants();
   })
   .then(() => {

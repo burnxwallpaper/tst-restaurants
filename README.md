@@ -42,7 +42,7 @@ python -m http.server 8080
 
 ## 距離起點
 
-預設起點是美麗華廣場一期（尖沙咀彌敦道 132 號，22.301111, 114.172222）。起點寫在 `index.html` 的 `ORIGINS`。也可以：
+預設起點是美麗華廣場一期（尖沙咀彌敦道 132 號，22.301111, 114.172222）。只選另一個地區、而且網址沒有指定起點時，改用該區港鐵站。起點寫在 `index.html` 的 `ORIGINS` 和 `data/districts.json`。也可以：
 
 - `?origin=mira-place-1`
 - `?lat=22.30&lng=114.17`
@@ -60,7 +60,7 @@ git commit -m "Update Tsim Sha Tsui restaurants"
 git push origin main
 ```
 
-`refresh.py --district tst` 會抓該區餐廳、引用店面和三類相片網址、並從搜尋結果的 `poiHours` 寫入營業時間。中斷後再跑會沿用 `_cache/`。不加 `--district` 時預設尖沙咀。
+`refresh.py --district tst` 會抓該區餐廳、引用店面和三類相片網址、並從搜尋結果的 `poiHours` 寫入營業時間。中斷後再跑會沿用 `_cache/`。不加 `--district` 時預設尖沙咀。地區代碼：`tst` 尖沙咀、`pe` 太子、`mk` 旺角、`ssp` 深水埗、`jordan` 佐敦、`ymt` 油麻地、`csw` 長沙灣、`lck` 荔枝角。同一間餐廳出現在多過一個地區時，頁面只顯示一次；每個地區的清單本身仍然完整。距離起點預設跟第一個選中的地區（尖沙咀是美麗華，其他是該區港鐵站），網址有 `origin` 或 `lat`/`lng` 時沿用該起點。
 
 ```bash
 python scripts/refresh.py --workers 8
