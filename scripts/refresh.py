@@ -215,6 +215,30 @@ DISTRICTS = {
             "lng": 114.1482,
         },
     },
+    "tw": {
+        "id": "tw",
+        "name": "荃灣",
+        "openrice_district_id": 3018,
+        "origin": {
+            "id": "tw-station",
+            "label": "荃灣站",
+            "address": "荃灣青山公路",
+            "lat": 22.3736,
+            "lng": 114.1178,
+        },
+    },
+    "tm": {
+        "id": "tm",
+        "name": "屯門",
+        "openrice_district_id": 3005,
+        "origin": {
+            "id": "tm-station",
+            "label": "屯門站",
+            "address": "屯門杯渡路",
+            "lat": 22.3952,
+            "lng": 113.9731,
+        },
+    },
 }
 ACTIVE = DISTRICTS["tst"]
 
@@ -1415,8 +1439,8 @@ def base_record(row: dict) -> dict:
         "price_range_id": price_num,
         "price_range": PRICE_LABELS.get(price_num, "價錢未列明"),
         "address": address,
-        "lat": coord(row.get("mapLatitude"), 22.2, 22.4),
-        "lng": coord(row.get("mapLongitude"), 114.1, 114.25),
+        "lat": coord(row.get("mapLatitude"), 22.28, 22.48),
+        "lng": coord(row.get("mapLongitude"), 113.9, 114.25),
         "score_smile": smile if isinstance(smile, int) else 0,
         "score_cry": cry if isinstance(cry, int) else 0,
         "score_overall": overall if isinstance(overall, (int, float)) and not isinstance(overall, bool) else None,
