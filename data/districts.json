@@ -38,6 +38,19 @@
         "lng": 114.1694
       },
       "card_count": 1342
+    },
+    {
+      "id": "ssp",
+      "name": "深水埗",
+      "openrice_district_id": 2019,
+      "origin": {
+        "id": "ssp-station",
+        "label": "深水埗站",
+        "address": "深水埗長沙灣道",
+        "lat": 22.3307,
+        "lng": 114.1623
+      },
+      "card_count": 860
     }
   ]
 }
