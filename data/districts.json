@@ -77,6 +77,19 @@
         "lng": 114.1707
       },
       "card_count": 305
+    },
+    {
+      "id": "csw",
+      "name": "長沙灣",
+      "openrice_district_id": 2013,
+      "origin": {
+        "id": "csw-station",
+        "label": "長沙灣站",
+        "address": "長沙灣長沙灣道",
+        "lat": 22.3354,
+        "lng": 114.1563
+      },
+      "card_count": 453
     }
   ]
 }
