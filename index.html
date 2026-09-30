@@ -188,7 +188,7 @@ footer.site p { margin: 0; }
           </div>
         </div>
         <div class="filter-foot">
-          <button type="button" id="reset">清除</button>
+          <button type="button" id="reset">預設</button>
           <button type="button" id="filter-close">完成</button>
         </div>
       </div>
@@ -245,7 +245,9 @@ const ORIGINS = [
   { id: "jordan-station", label: "佐敦站", address: "佐敦彌敦道", lat: 22.3049, lng: 114.1718 },
   { id: "ymt-station", label: "油麻地站", address: "油麻地彌敦道", lat: 22.3129, lng: 114.1707 },
   { id: "csw-station", label: "長沙灣站", address: "長沙灣長沙灣道", lat: 22.3354, lng: 114.1563 },
-  { id: "lck-station", label: "荔枝角站", address: "荔枝角長沙灣道", lat: 22.3373, lng: 114.1482 }
+  { id: "lck-station", label: "荔枝角站", address: "荔枝角長沙灣道", lat: 22.3373, lng: 114.1482 },
+  { id: "tw-station", label: "荃灣站", address: "荃灣青山公路", lat: 22.3736, lng: 114.1178 },
+  { id: "tm-station", label: "屯門站", address: "屯門杯渡路", lat: 22.3952, lng: 113.9731 }
 ];
 const DISTANCES = [
   { id: "300", label: "≤300 m", max: 300 },
@@ -275,6 +277,11 @@ const OPENED_PRESETS = [
   { label: "近1年", months: -12 }
 ];
 const PRICE_ORDER = ["1", "2", "3", "4", "5", "6"];
+const BASE = new URL(".", document.baseURI);
+
+function sitePath(path) {
+  return new URL(path, BASE).href;
+}
 const updatedEl = document.getElementById("updated");
 const originNote = document.getElementById("origin-note");
 const grid = document.getElementById("grid");
@@ -1491,7 +1498,7 @@ async function openAlbum(item, tab, fromHistory) {
     let payload = albumCache.get(albumPoi);
     if (!payload) {
       const district = item.district || DEFAULT_DISTRICT;
-      const response = await fetch("./data/" + encodeURIComponent(district) + "/photos/" + encodeURIComponent(albumPoi) + ".json");
+      const response = await fetch(sitePath("data/" + encodeURIComponent(district) + "/photos/" + encodeURIComponent(albumPoi) + ".json"));
       if (!response.ok) throw new Error("HTTP " + response.status);
       payload = normalizeAlbum(await response.json());
       albumCache.set(albumPoi, payload);
@@ -1747,7 +1754,7 @@ async function ensureRestaurants() {
   const wanted = activeDistrictIds();
   await Promise.all(wanted.map(async id => {
     if (districtData.has(id)) return;
-    const response = await fetch("./data/" + encodeURIComponent(id) + "/restaurants.json");
+    const response = await fetch(sitePath("data/" + encodeURIComponent(id) + "/restaurants.json"));
     if (!response.ok) throw new Error("HTTP " + response.status);
     const payload = await response.json();
     const list = Array.isArray(payload.restaurants) ? payload.restaurants : [];
@@ -1776,7 +1783,7 @@ async function ensureRestaurants() {
   updatedEl.textContent = formatted ? "資料更新：" + formatted + " HKT" : "";
 }
 
-fetch("./data/districts.json")
+fetch(sitePath("data/districts.json"))
   .then(response => {
     if (!response.ok) throw new Error("HTTP " + response.status);
     return response.json();
