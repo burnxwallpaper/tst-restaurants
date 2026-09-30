@@ -22,7 +22,7 @@ python -m http.server 8080
 
 `meta` 包含 `updated_at`（香港時間，手動跑腳本才會變）、`card_count`、`menu_count` / `menu_image_count`、`environment_count` / `environment_image_count`、`food_count` / `food_image_count`、`hours_count`、`bookable_count`、`opened_count`、`public_holidays`（1823 香港公眾假期，`YYYY-MM-DD`）。
 
-每間餐廳有名稱、菜式、人均價錢、地址、`lat` / `lng`、`district`、OpenRice 好評／負評、店面圖網址 `cover`（OpenRice 門口相，沒有則為空字串）、`photo_counts`（`menu`、`environment`、`food`，是 OpenRice 總數）、`hours`、`bookable`、`booking_url`、`opened_on`。相片清單不放在這份主檔。有相片的餐廳另有 `data/{district}/photos/{poiId}.json`，三個陣列 `menu`、`environment`、`food` 各最多最新 50 張，並有 `menu_total`、`environment_total`、`food_total`。每張有 `full`、`time`（OpenRice `submitTime`）、可選的 `caption` 和 `source`。縮圖是把 `full` 的尺寸碼換成 `sx`。卡片地址連到 Google 地圖（有座標用緯度經度，否則用名稱加地址）。「Google 評分」連到以名稱加地址搜尋的 Google 地圖，評分不寫進 JSON。
+每間餐廳有名稱、菜式、人均價錢、地址、`lat` / `lng`、`district`、OpenRice 好評／負評、店面圖網址 `cover`（OpenRice 門口相；沒有門口相時用第一張環境相，否則餐牌，否則食物，再沒有就是空字串）、`photo_counts`（`menu`、`environment`、`food`，是 OpenRice 總數）、`hours`、`bookable`、`booking_url`、`opened_on`。排序在搜尋列旁，可用距離、開張日期、好評數、OpenRice 好評比例和價錢；缺少該欄的餐廳排在最後。網址用 `sort` 記住，預設是距離由近到遠。相片清單不放在這份主檔。有相片的餐廳另有 `data/{district}/photos/{poiId}.json`，三個陣列 `menu`、`environment`、`food` 各最多最新 50 張，並有 `menu_total`、`environment_total`、`food_total`。每張有 `full`、`time`（OpenRice `submitTime`）、可選的 `caption` 和 `source`。縮圖是把 `full` 的尺寸碼換成 `sx`。卡片地址連到 Google 地圖（有座標用緯度經度，否則用名稱加地址）。「Google 評分」連到以名稱加地址搜尋的 Google 地圖，評分不寫進 JSON。
 
 `hours` 沒有資料時是 `null`。有資料時：
 

@@ -1287,6 +1287,40 @@ def cover_url(row: dict) -> str:
     return photo_url(door, "standard") or photo_url(door, "full") or photo_url(door, "thumbnail")
 
 
+def stored_photo_url(photo: object) -> str:
+    if not isinstance(photo, dict):
+        return ""
+    full = photo.get("full")
+    if isinstance(full, str) and full.startswith("http"):
+        return full
+    thumb = photo.get("thumb")
+    if isinstance(thumb, str) and thumb.startswith("http"):
+        return thumb
+    return ""
+
+
+def fallback_cover(poi_id: int, photo_dir: Path | None = None) -> str:
+    """First 環境 photo, else 餐牌, else 食物. Empty when none are stored."""
+    folder = photo_dir if photo_dir is not None else PHOTO_DIR
+    payload = read_json(folder / f"{poi_id}.json")
+    if not payload:
+        return ""
+    for key in ("environment", "menu", "food"):
+        photos = payload.get(key)
+        if not isinstance(photos, list):
+            continue
+        for photo in photos:
+            url = stored_photo_url(photo)
+            if url:
+                return url
+    return ""
+
+
+def resolve_cover(row: dict, poi_id: int) -> str:
+    door = cover_url(row)
+    return door or fallback_cover(poi_id)
+
+
 def save_cover(row: dict, poi_id: int, *, use_cache: bool) -> str:
     return cover_url(row)
 
@@ -1420,6 +1454,36 @@ def sync_district_catalog(card_count: int) -> None:
     write_json(path, {"districts": districts})
 
 
+def fill_missing_covers() -> None:
+    """Write a card image for restaurants that have no door photo."""
+    data_root = ROOT / "data"
+    if not data_root.is_dir():
+        return
+    for district_dir in sorted(path for path in data_root.iterdir() if path.is_dir()):
+        path = district_dir / "restaurants.json"
+        payload = read_json(path)
+        if not payload or not isinstance(payload.get("restaurants"), list):
+            continue
+        records = [row for row in payload["restaurants"] if isinstance(row, dict)]
+        photo_dir = district_dir / "photos"
+        filled = 0
+        for record in records:
+            cover = record.get("cover")
+            if isinstance(cover, str) and cover.startswith("http"):
+                continue
+            poi_id = record.get("poi_id")
+            if not isinstance(poi_id, int) or isinstance(poi_id, bool):
+                continue
+            url = fallback_cover(poi_id, photo_dir)
+            if not url:
+                continue
+            record["cover"] = url
+            filled += 1
+        if filled:
+            write_json(path, payload)
+        log(f"covers {district_dir.name} filled={filled}")
+
+
 def publish(records: list[dict]) -> None:
     menu_images = sum(photo_count(row, "menu") for row in records)
     environment_images = sum(photo_count(row, "environment") for row in records)
@@ -1466,6 +1530,8 @@ def process_row(row: dict, *, use_cache: bool) -> dict:
         apply_photo_counts(record, save_album(poi_id, use_cache=use_cache))
     except Exception as exc:
         log(f"  photo error {poi_id}: {exc}")
+    if not str(record.get("cover") or "").startswith("http"):
+        record["cover"] = fallback_cover(poi_id)
     return record
 
 
@@ -1539,6 +1605,8 @@ def refresh(target: int, max_scan: int, workers: int, *, use_cache: bool) -> Non
             counts = save_album(poi_id, use_cache=use_cache)
         except Exception as exc:
             log(f"  photo error {poi_id}: {exc}")
+        if not cover.startswith("http"):
+            cover = fallback_cover(poi_id)
         return ("place", poi_id, cover, counts)
 
     done_place = 0
@@ -1719,9 +1787,17 @@ def main() -> None:
     parser.add_argument("--shard", type=int, default=0, help="This shard index, from 0")
     parser.add_argument("--shards", type=int, default=1, help="How many photo shards are running")
     parser.add_argument("--district", action="append", default=[], help="District slug, repeatable. Default: tst")
+    parser.add_argument(
+        "--fill-covers",
+        action="store_true",
+        help="Fill empty door photos from stored 環境, then 餐牌, then 食物",
+    )
     args = parser.parse_args()
     if args.check:
         self_check()
+        return
+    if args.fill_covers:
+        fill_missing_covers()
         return
     slugs = args.district or ["tst"]
     if args.shards > 1:

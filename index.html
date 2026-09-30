@@ -126,6 +126,9 @@ footer.site p { margin: 0; }
       <select id="sort" class="sort" aria-label="排序">
         <option value="distance_asc">距離（近→遠）</option>
         <option value="distance_desc">距離（遠→近）</option>
+        <option value="opened_desc">開張日期（新→舊）</option>
+        <option value="opened_asc">開張日期（舊→新）</option>
+        <option value="smile_desc">好評數 😊（多→少）</option>
         <option value="rating_desc">OpenRice 好評（高→低）</option>
         <option value="price_asc">價錢（低→高）</option>
         <option value="price_desc">價錢（高→低）</option>
@@ -667,21 +670,36 @@ function priceValue(item) {
   return Number.isFinite(id) && id > 0 ? id : null;
 }
 
+function openedValue(item) {
+  return typeof item.opened_on === "string" && item.opened_on ? item.opened_on : null;
+}
+
+function smileCount(item) {
+  const smile = Number(item.score_smile);
+  return Number.isFinite(smile) && smile > 0 ? smile : null;
+}
+
 function sortValue(item) {
   if (sortKey.startsWith("distance")) return itemDistance(item);
+  if (sortKey.startsWith("opened")) return openedValue(item);
+  if (sortKey.startsWith("smile")) return smileCount(item);
   if (sortKey.startsWith("rating")) return ratingValue(item);
   return priceValue(item);
 }
 
 function compareMissingLast(left, right) {
-  const leftMissing = left == null;
-  const rightMissing = right == null;
+  const leftMissing = left == null || left === "";
+  const rightMissing = right == null || right === "";
   if (leftMissing || rightMissing) {
     if (leftMissing && rightMissing) return 0;
     return leftMissing ? 1 : -1;
   }
-  if (left === right) return 0;
   const ascending = sortKey.endsWith("_asc");
+  if (typeof left === "string" || typeof right === "string") {
+    const order = String(left).localeCompare(String(right));
+    return ascending ? order : -order;
+  }
+  if (left === right) return 0;
   return ascending ? left - right : right - left;
 }
 
