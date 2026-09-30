@@ -90,6 +90,19 @@
         "lng": 114.1563
       },
       "card_count": 453
+    },
+    {
+      "id": "lck",
+      "name": "荔枝角",
+      "openrice_district_id": 2016,
+      "origin": {
+        "id": "lck-station",
+        "label": "荔枝角站",
+        "address": "荔枝角長沙灣道",
+        "lat": 22.3373,
+        "lng": 114.1482
+      },
+      "card_count": 369
     }
   ]
 }
