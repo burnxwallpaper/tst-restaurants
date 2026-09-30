@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+_cache/
+_probe_*.json
+_sample_menu.jpg
+_rms.jpg
+_user0.jpg

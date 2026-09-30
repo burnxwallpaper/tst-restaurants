@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>尖沙咀 午餐餐廳</title>
+<style>
+:root { color-scheme: light; --ink:#1c1917; --muted:#57534e; --line:#e7e5e4; --bg:#faf7f2; --card:#fff; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: "Segoe UI", "PingFang HK", "Microsoft JhengHei", sans-serif; background:var(--bg); color:var(--ink); }
+header { padding: 12px 20px 8px; max-width: 1100px; margin: 0 auto; }
+.origin-note { color: var(--muted); margin: 0; font-size: 13px; }
+.toolbar { display:flex; flex-direction:column; gap:10px; }
+.filters { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.filter-actions { display:flex; }
+.filter-toggle { width:100%; min-height:48px; text-align:left; font-weight:700; padding:12px 16px; border-radius:12px; background:#fff; }
+.filter-toggle.open { background:#1c1917; color:#fff; border-color:#1c1917; }
+.groups { display:flex; flex-direction:column; gap:8px; }
+.group { border:1px solid var(--line); border-radius:12px; background:#fff; padding:0 12px; }
+.group[open] { padding-bottom:8px; }
+.group summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:650; }
+.hint { margin:0 0 8px; color:var(--muted); font-size:13px; }
+.checks { display:flex; flex-wrap:wrap; gap:4px 14px; }
+.checks.scroll { max-height:320px; overflow:auto; }
+.opened-label { display:block; color:var(--muted); font-size:13px; margin:0 0 4px; }
+#opened { width:100%; max-width:280px; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:8px 12px; font:inherit; background:#fff; }
+.presets { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.presets button { min-height:44px; }
+.check { display:inline-flex; align-items:center; gap:8px; min-height:44px; }
+.check input { width:18px; height:18px; margin:0; }
+.check .count { color:var(--muted); font-size:13px; }
+button.more-opts { min-height:44px; }
+.rowlabel { color: var(--muted); font-size: 13px; }
+@media (max-width: 719px) {
+  .checks { flex-direction:column; align-items:stretch; }
+  .check { width:100%; }
+}
+select.sort, input[type="search"] { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font: inherit; color: inherit; max-width:100%; }
+input[type="search"] { min-width: min(100%, 240px); flex: 1; }
+select.sort, select.origin { cursor:pointer; }
+button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; cursor:pointer; font: inherit; }
+button.on { background:#1c1917; color:#fff; border-color:#1c1917; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.shown { color: var(--muted); font-size: 13px; margin: 0; }
+.empty, button.more { grid-column: 1 / -1; }
+.empty { color: var(--muted); margin: 8px 0; }
+button.more { width: 100%; border-radius: 12px; padding: 14px; }
+main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 48px; display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+article { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+.coverbtn { display:block; width:100%; padding:0; border:0; border-radius:0; background:#e7e5e4; cursor:pointer; }
+.coverbtn img, .ph { width:100%; height:170px; object-fit:cover; background:#e7e5e4; display:block; }
+.ph { display:flex; align-items:center; justify-content:center; color:var(--muted); text-align:center; padding: 12px; }
+.body { padding: 12px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+.name { font-size: 18px; font-weight: 700; line-height: 1.35; }
+.sub, .rating, .distance, .hours { color: var(--muted); }
+.rating, .distance, .hours { font-size: 13px; }
+a.address, .address { display:block; color:var(--ink); font-size:15px; line-height:1.45; }
+a.address { text-decoration:underline; text-underline-offset:2px; }
+.hours summary { cursor: pointer; color: var(--ink); }
+.week { white-space: pre-line; margin: 6px 0 0; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.dot.open { background: #16a34a; }
+.dot.soon { background: #d97706; }
+.dot.closed { background: #b91c1c; }
+.dot.unknown { background: #a8a29e; }
+.links { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; align-items:center; }
+.links button { min-height: 44px; }
+a.source, a.book { color:#9a3412; font-size:13px; }
+a.book, span.book { font-weight: 700; }
+.status { max-width: 1100px; margin: 0 auto; padding: 0 20px 20px; color: var(--muted); }
+.modal { position:fixed; inset:0; z-index:30; background:rgba(28,25,23,.92); display:flex; flex-direction:column; overflow:hidden; padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+.modal[hidden] { display:none; }
+.modal-bar { position:relative; z-index:5; width:100%; flex:0 0 auto; display:flex; align-items:center; gap:8px; color:#fff; }
+.modal-title { flex:1; min-width:0; font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.modal-date { flex:0 0 auto; font-size:13px; color:#fdba74; font-variant-numeric:tabular-nums; }
+.modal-date[hidden] { display:none; }
+.modal-count { flex:0 0 auto; font-size:16px; font-variant-numeric:tabular-nums; background:rgba(255,255,255,.18); border-radius:999px; padding:8px 12px; }
+.modal-stage { position:relative; z-index:1; flex:1 1 auto; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; }
+.modal-stage img { position:relative; z-index:1; max-width:100%; max-height:100%; object-fit:contain; background:#111; }
+.modal .nav { position:absolute; top:50%; z-index:4; transform:translateY(-50%); width:48px; height:48px; min-width:48px; min-height:48px; padding:0; border:0; border-radius:999px; background:#fff; color:#1c1917; font-size:32px; line-height:48px; box-shadow:0 2px 12px rgba(0,0,0,.5); }
+.modal .nav.prev { left:0; }
+.modal .nav.next { right:0; }
+.modal .nav[hidden] { display:none; }
+.modal .close { position:relative; z-index:5; flex:0 0 auto; width:48px; height:48px; min-width:48px; min-height:48px; padding:0; border:0; border-radius:999px; background:#fff; color:#1c1917; font-size:28px; line-height:1; }
+.modal-link { margin:8px 0 0; text-align:center; flex:0 0 auto; }
+.modal a { color:#fdba74; font-size:13px; }
+footer.site { max-width: 1100px; margin: 0 auto; padding: 4px 20px 28px; color: var(--muted); font-size: 12px; }
+footer.site p { margin: 0; }
+.album { position:fixed; inset:0; z-index:20; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+.album[hidden] { display:none; }
+.album-bar, .album-tabs { display:flex; gap:8px; align-items:center; flex:0 0 auto; }
+.album-bar { margin-bottom:8px; }
+.album-tabs { margin-bottom:8px; overflow-x:auto; }
+.album-note { margin:0 0 8px; font-size:13px; color:var(--muted); }
+.album-note a { color:#9a3412; }
+.album-note[hidden] { display:none; }
+.album-title { flex:1; min-width:0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.album-bar button, .album-tabs button { min-height:44px; flex:0 0 auto; }
+.album-scroll { flex:1 1 auto; min-height:0; overflow:auto; }
+.album-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:2px; align-content:start; align-items:start; }
+.album-grid .empty { grid-column:1 / -1; }
+#album-more { height:1px; }
+.thumb { position:relative; display:block; width:100%; aspect-ratio:1 / 1; padding:0; border:0; border-radius:0; overflow:hidden; background:#e7e5e4; }
+.thumb::before { content:""; display:block; padding-top:100%; }
+.thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.thumb-date { position:absolute; left:0; right:0; bottom:0; margin:0; padding:12px 4px 3px; font-size:10px; line-height:1.2; color:#fff; text-align:right; background:linear-gradient(transparent, rgba(0,0,0,.6)); pointer-events:none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="toolbar">
+    <div class="filters">
+      <input id="q" type="search" placeholder="餐廳、菜式或地址" aria-label="搜尋">
+      <select id="sort" class="sort" aria-label="排序">
+        <option value="distance_asc">距離（近→遠）</option>
+        <option value="distance_desc">距離（遠→近）</option>
+        <option value="rating_desc">OpenRice 好評（高→低）</option>
+        <option value="price_asc">價錢（低→高）</option>
+        <option value="price_desc">價錢（高→低）</option>
+      </select>
+    </div>
+    <div class="filters">
+      <span class="rowlabel">起點</span>
+      <select id="origin" class="origin" aria-label="距離起點"></select>
+      <button type="button" id="geo">使用我的位置</button>
+    </div>
+    <div class="filter-actions">
+      <button type="button" id="reset">清除篩選</button>
+    </div>
+    <button type="button" id="filter-toggle" class="filter-toggle" aria-expanded="false">篩選</button>
+    <div class="groups" id="groups">
+      <details class="group" id="group-district" hidden>
+        <summary>地區</summary>
+        <div class="checks" id="districts" data-group="district"></div>
+      </details>
+      <details class="group">
+        <summary>狀態</summary>
+        <div class="checks" id="statuses" data-group="status"></div>
+      </details>
+      <details class="group">
+        <summary>訂座</summary>
+        <div class="checks" id="bookings" data-group="booking"></div>
+      </details>
+      <details class="group">
+        <summary>餐牌</summary>
+        <div class="checks" id="menus" data-group="menu"></div>
+      </details>
+      <details class="group">
+        <summary>距離</summary>
+        <p class="hint">多選時以最遠的範圍計算。</p>
+        <div class="checks" id="distances" data-group="distance"></div>
+      </details>
+      <details class="group">
+        <summary>價錢</summary>
+        <div class="checks" id="prices" data-group="price"></div>
+      </details>
+      <details class="group" id="group-opened">
+        <summary>開張日期</summary>
+        <label class="opened-label" for="opened">此日期或之後</label>
+        <input id="opened" type="date" aria-label="開張日期，此日期或之後">
+        <div class="presets" id="opened-presets"></div>
+      </details>
+      <details class="group" id="group-cuisine">
+        <summary>菜式</summary>
+        <div class="checks scroll" id="cuisines" data-group="cuisine"></div>
+      </details>
+    </div>
+    <p class="origin-note" id="origin-note"></p>
+    <p class="shown" id="shown"></p>
+  </div>
+</header>
+<p class="status" id="status" hidden></p>
+<main id="grid"></main>
+<footer class="site"><p id="updated"></p></footer>
+<div id="album" class="album" hidden>
+  <div class="album-bar">
+    <button type="button" id="album-back">返回</button>
+    <div class="album-title" id="album-title"></div>
+    <button type="button" id="album-sort" aria-pressed="false">最新</button>
+  </div>
+  <div class="album-tabs" id="album-tabs">
+    <button type="button" data-tab="menu">餐牌</button>
+    <button type="button" data-tab="environment">環境</button>
+    <button type="button" data-tab="food">食物</button>
+  </div>
+  <p id="album-note" class="album-note" hidden></p>
+  <div class="album-scroll" id="album-scroll">
+    <div id="album-grid" class="album-grid"></div>
+  </div>
+</div>
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-bar">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-date" id="modal-date" hidden></div>
+    <div class="modal-count" id="modal-count"></div>
+    <button type="button" class="close" id="modal-close" aria-label="關閉">×</button>
+  </div>
+  <div class="modal-stage">
+    <img id="modal-img" alt="">
+    <button type="button" class="nav prev" id="modal-prev" aria-label="上一張">‹</button>
+    <button type="button" class="nav next" id="modal-next" aria-label="下一張">›</button>
+  </div>
+  <p class="modal-link"><a id="modal-source" href="" target="_blank" rel="noopener">在 OpenRice 查看此相片</a></p>
+</div>
+<script>
+const ORIGINS = [
+  {
+    id: "mira-place-1",
+    label: "美麗華廣場一期",
+    address: "尖沙咀彌敦道132號",
+    lat: 22.301111,
+    lng: 114.172222
+  }
+];
+const DISTANCES = [
+  { id: "300", label: "≤300 m", max: 300 },
+  { id: "500", label: "≤500 m", max: 500 },
+  { id: "1000", label: "≤1 km", max: 1000 }
+];
+const STATUSES = [
+  { id: "open", label: "營業中" },
+  { id: "soon", label: "準備營業" },
+  { id: "closed", label: "休息中" },
+  { id: "unknown", label: "未有營業時間" }
+];
+const BOOKINGS = [
+  { id: "bookable", label: "可訂座" },
+  { id: "none", label: "未有訂座" }
+];
+const MENU_FILTERS = [
+  { id: "yes", label: "有餐牌" },
+  { id: "no", label: "未有餐牌" }
+];
+const FILTER_KEYS = ["district", "status", "booking", "menu", "distance", "price", "cuisine"];
+const ALBUM_TYPE_IDS = { menu: 7, environment: 2, food: 1 };
+const DEFAULT_DISTRICT = "tst";
+const OPENED_PRESETS = [
+  { label: "近3個月", months: -3 },
+  { label: "近6個月", months: -6 },
+  { label: "近1年", months: -12 }
+];
+const PRICE_ORDER = ["1", "2", "3", "4", "5", "6"];
+const updatedEl = document.getElementById("updated");
+const originNote = document.getElementById("origin-note");
+const grid = document.getElementById("grid");
+const districtsEl = document.getElementById("districts");
+const cuisinesEl = document.getElementById("cuisines");
+const pricesEl = document.getElementById("prices");
+const distancesEl = document.getElementById("distances");
+const statusesEl = document.getElementById("statuses");
+const bookingsEl = document.getElementById("bookings");
+const menusEl = document.getElementById("menus");
+const groupsEl = document.getElementById("groups");
+const sortEl = document.getElementById("sort");
+const searchEl = document.getElementById("q");
+const originEl = document.getElementById("origin");
+const shownEl = document.getElementById("shown");
+const statusEl = document.getElementById("status");
+const modal = document.getElementById("modal");
+const modalImg = document.getElementById("modal-img");
+const modalTitle = document.getElementById("modal-title");
+const modalSource = document.getElementById("modal-source");
+const modalPrev = document.getElementById("modal-prev");
+const modalNext = document.getElementById("modal-next");
+const modalCount = document.getElementById("modal-count");
+const modalDate = document.getElementById("modal-date");
+const album = document.getElementById("album");
+const albumScroll = document.getElementById("album-scroll");
+const albumGrid = document.getElementById("album-grid");
+const albumTitle = document.getElementById("album-title");
+const albumSort = document.getElementById("album-sort");
+const albumNote = document.getElementById("album-note");
+const openedEl = document.getElementById("opened");
+const PAGE_SIZE = 60;
+const ALBUM_PAGE = 80;
+const ALBUM_LABELS = { menu: "餐牌", environment: "環境", food: "食物" };
+let restaurants = [];
+let shownCount = PAGE_SIZE;
+const districtCatalog = [];
+const districtData = new Map();
+const selected = {
+  district: new Set([DEFAULT_DISTRICT]),
+  status: new Set(),
+  booking: new Set(),
+  menu: new Set(),
+  distance: new Set(),
+  price: new Set(),
+  cuisine: new Set()
+};
+let openedOn = "";
+let sortKey = "distance_asc";
+let holidaySet = new Set();
+const WEEKDAY_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+let query = "";
+let origin = ORIGINS[0];
+let slides = [];
+let slideIndex = 0;
+const albumCache = new Map();
+let albumPoi = "";
+let albumTab = "menu";
+let albumNewest = true;
+let albumShown = ALBUM_PAGE;
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
+function formatUpdated(iso) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const parts = new Intl.DateTimeFormat("zh-HK", {
+    timeZone: "Asia/Hong_Kong",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const pick = type => parts.find(part => part.type === type)?.value || "";
+  return pick("year") + "-" + pick("month") + "-" + pick("day") + " " + pick("hour") + ":" + pick("minute");
+}
+
+function cuisineName(item) {
+  if (item.cuisine) return String(item.cuisine);
+  if (Array.isArray(item.cuisines) && item.cuisines.length) return String(item.cuisines[0]);
+  return "未分類";
+}
+
+function priceId(item) {
+  const id = Number(item.price_range_id);
+  return Number.isFinite(id) && id > 0 ? String(id) : "";
+}
+
+function priceLabel(item) {
+  return item.price_range ? String(item.price_range) : "價錢未列明";
+}
+
+function menuList(item) {
+  return Array.isArray(item.menus) ? item.menus.filter(menu => menu && menu.image) : [];
+}
+
+function photoCounts(item) {
+  const counts = item && item.photo_counts;
+  if (counts && typeof counts === "object") {
+    const num = value => {
+      const n = Number(value);
+      return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    };
+    return {
+      menu: num(counts.menu),
+      environment: num(counts.environment),
+      food: num(counts.food)
+    };
+  }
+  return { menu: menuList(item).length, environment: 0, food: 0 };
+}
+
+function derivedThumb(full) {
+  if (typeof full !== "string") return "";
+  const next = full.replace(/(px|lx|lv|tx)\.(jpe?g|webp|png)$/i, "sx.$2");
+  return next === full ? "" : next;
+}
+
+function photoDate(time) {
+  return typeof time === "string" && /^\d{4}-\d{2}-\d{2}/.test(time) ? time.slice(0, 10) : "";
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const radius = 6371000;
+  const toRad = deg => deg * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * radius * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+function itemDistance(item) {
+  const lat = Number(item.lat);
+  const lng = Number(item.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return haversine(origin.lat, origin.lng, lat, lng);
+}
+
+function formatDistance(meters) {
+  if (meters == null) return "—";
+  if (meters < 1000) return Math.round(meters) + " m";
+  return (meters / 1000).toFixed(1) + " km";
+}
+
+function queryText(item) {
+  const meals = menuList(item).map(menu => menu.meal || "");
+  return [
+    item.name,
+    item.cuisine,
+    item.address,
+    item.price_range,
+    ...meals,
+    ...(Array.isArray(item.cuisines) ? item.cuisines : [])
+  ].join(" ").toLowerCase();
+}
+
+function matchesQuery(item) {
+  return !query || queryText(item).includes(query);
+}
+
+function itemCuisines(item) {
+  const names = [];
+  if (Array.isArray(item.cuisines)) {
+    item.cuisines.forEach(name => {
+      if (name) names.push(String(name));
+    });
+  }
+  if (!names.length) names.push(cuisineName(item));
+  return names;
+}
+
+function matchesCuisine(item) {
+  if (!selected.cuisine.size) return true;
+  return itemCuisines(item).some(name => selected.cuisine.has(name));
+}
+
+function matchesPrice(item) {
+  if (!selected.price.size) return true;
+  return selected.price.has(priceId(item));
+}
+
+function distanceLimit() {
+  let max = null;
+  DISTANCES.forEach(band => {
+    if (!selected.distance.has(band.id)) return;
+    max = max == null ? band.max : Math.max(max, band.max);
+  });
+  return max;
+}
+
+function matchesDistance(item) {
+  const max = distanceLimit();
+  if (max == null) return true;
+  const meters = itemDistance(item);
+  return meters != null && meters <= max;
+}
+
+function hkClock(date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Hong_Kong",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const pick = type => {
+    const part = parts.find(item => item.type === type);
+    return part ? part.value : "";
+  };
+  let hour = pick("hour");
+  if (hour === "24") hour = "00";
+  const weekday = WEEKDAY_INDEX[pick("weekday")];
+  return {
+    ymd: pick("year") + "-" + pick("month") + "-" + pick("day"),
+    weekday: typeof weekday === "number" ? weekday : 0,
+    minutes: Number(hour) * 60 + Number(pick("minute"))
+  };
+}
+
+function addDays(ymd, delta) {
+  const bits = ymd.split("-").map(Number);
+  const next = new Date(Date.UTC(bits[0], bits[1] - 1, bits[2] + delta));
+  const month = String(next.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(next.getUTCDate()).padStart(2, "0");
+  return next.getUTCFullYear() + "-" + month + "-" + day;
+}
+
+function clockMinutes(value) {
+  if (typeof value !== "string") return null;
+  const bits = value.split(":");
+  const hour = Number(bits[0]);
+  const minute = Number(bits[1]);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  if (hour === 24 && minute === 0) return 1440;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return hour * 60 + minute;
+}
+
+function scheduleFor(hours, ymd, weekday) {
+  if (!hours || typeof hours !== "object") return null;
+  const specials = Array.isArray(hours.specials) ? hours.specials : [];
+  const covering = specials.filter(item => item && item.from && item.to && ymd >= item.from && ymd <= item.to);
+  if (covering.length) {
+    const spec = covering[covering.length - 1];
+    return Array.isArray(spec.ranges) ? spec.ranges : [];
+  }
+  if (holidaySet.has(ymd) && Array.isArray(hours.holiday)) return hours.holiday;
+  const tomorrow = addDays(ymd, 1);
+  if (!holidaySet.has(ymd) && holidaySet.has(tomorrow) && Array.isArray(hours.holiday_eve)) return hours.holiday_eve;
+  const monthly = Array.isArray(hours.monthly) ? hours.monthly : [];
+  const weekIndex = Math.floor((Number(ymd.slice(8, 10)) - 1) / 7) + 1;
+  const monthHit = monthly.find(item => item && item.day === weekday && item.week === weekIndex);
+  if (monthHit) return Array.isArray(monthHit.ranges) ? monthHit.ranges : [];
+  const week = hours.week;
+  if (!week || typeof week !== "object" || !Object.keys(week).length) return null;
+  const ranges = week[String(weekday)];
+  return Array.isArray(ranges) ? ranges : [];
+}
+
+function rangeCovers(ranges, now, overnightTail) {
+  if (!Array.isArray(ranges)) return false;
+  return ranges.some(range => {
+    if (!Array.isArray(range) || range.length < 2) return false;
+    const start = clockMinutes(range[0]);
+    let end = clockMinutes(range[1]);
+    if (start == null || end == null) return false;
+    if (end === 0 && start !== 0) end = 1440;
+    if (start === end) return !overnightTail;
+    if (end > start) return !overnightTail && now >= start && now < end;
+    if (overnightTail) return now < end;
+    return now >= start;
+  });
+}
+
+function minutesUntilOpen(todayRanges, tomorrowRanges, now) {
+  let best = null;
+  const consider = (delta) => {
+    if (delta > 0 && (best == null || delta < best)) best = delta;
+  };
+  (Array.isArray(todayRanges) ? todayRanges : []).forEach(range => {
+    if (!Array.isArray(range)) return;
+    const start = clockMinutes(range[0]);
+    if (start != null && start > now && start < 1440) consider(start - now);
+  });
+  const untilMidnight = 1440 - now;
+  (Array.isArray(tomorrowRanges) ? tomorrowRanges : []).forEach(range => {
+    if (!Array.isArray(range)) return;
+    const start = clockMinutes(range[0]);
+    if (start != null && start < 1440) consider(untilMidnight + start);
+  });
+  return best;
+}
+
+function openingStatus(hours, date) {
+  if (!hours || typeof hours !== "object") {
+    return { state: "unknown", label: "未有營業時間", ranges: null };
+  }
+  const hk = hkClock(date);
+  const today = scheduleFor(hours, hk.ymd, hk.weekday);
+  if (today == null) return { state: "unknown", label: "未有營業時間", ranges: null };
+  const yesterday = scheduleFor(hours, addDays(hk.ymd, -1), (hk.weekday + 6) % 7) || [];
+  const tomorrow = scheduleFor(hours, addDays(hk.ymd, 1), (hk.weekday + 1) % 7) || [];
+  if (rangeCovers(today, hk.minutes, false) || rangeCovers(yesterday, hk.minutes, true)) {
+    return { state: "open", label: "營業中", ranges: today };
+  }
+  const delta = minutesUntilOpen(today, tomorrow, hk.minutes);
+  if (delta != null && delta <= 60) return { state: "soon", label: "準備營業", ranges: today };
+  return { state: "closed", label: "休息中", ranges: today };
+}
+
+function formatRanges(ranges) {
+  if (!Array.isArray(ranges) || !ranges.length) return "休息";
+  if (ranges.length === 1 && ranges[0][0] === "00:00" && ranges[0][1] === "24:00") return "24小時";
+  return ranges.map(range => range[0] + "–" + range[1]).join("、");
+}
+
+function matchesStatus(item) {
+  if (!selected.status.size) return true;
+  return selected.status.has(openingStatus(item.hours, new Date()).state);
+}
+
+function matchesBooking(item) {
+  if (!selected.booking.size) return true;
+  return selected.booking.has(item.bookable === true ? "bookable" : "none");
+}
+
+function matchesMenu(item) {
+  if (!selected.menu.size) return true;
+  return selected.menu.has(photoCounts(item).menu > 0 ? "yes" : "no");
+}
+
+function matchesDistrict(item) {
+  if (!districtCatalog.length) return true;
+  if (!selected.district.size) return false;
+  return selected.district.has(String(item.district || DEFAULT_DISTRICT));
+}
+
+function shiftMonths(ymd, delta) {
+  const parts = ymd.split("-").map(Number);
+  const cursor = new Date(Date.UTC(parts[0], parts[1] - 1 + delta, 1));
+  const last = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0)).getUTCDate();
+  const clamped = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), Math.min(parts[2], last)));
+  const month = String(clamped.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(clamped.getUTCDate()).padStart(2, "0");
+  return clamped.getUTCFullYear() + "-" + month + "-" + day;
+}
+
+function matchesOpened(item) {
+  if (!openedOn) return true;
+  return typeof item.opened_on === "string" && item.opened_on >= openedOn;
+}
+
+function ratingValue(item) {
+  const smile = Number(item.score_smile);
+  const cry = Number(item.score_cry);
+  const good = Number.isFinite(smile) ? smile : 0;
+  const bad = Number.isFinite(cry) ? cry : 0;
+  if (good + bad === 0) return null;
+  return good / (good + bad);
+}
+
+function priceValue(item) {
+  const id = Number(item.price_range_id);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function sortValue(item) {
+  if (sortKey.startsWith("distance")) return itemDistance(item);
+  if (sortKey.startsWith("rating")) return ratingValue(item);
+  return priceValue(item);
+}
+
+function compareMissingLast(left, right) {
+  const leftMissing = left == null;
+  const rightMissing = right == null;
+  if (leftMissing || rightMissing) {
+    if (leftMissing && rightMissing) return 0;
+    return leftMissing ? 1 : -1;
+  }
+  if (left === right) return 0;
+  const ascending = sortKey.endsWith("_asc");
+  return ascending ? left - right : right - left;
+}
+
+function poolFor(exclude) {
+  return restaurants.filter(item =>
+    matchesQuery(item)
+    && (exclude === "district" || matchesDistrict(item))
+    && (exclude === "distance" || matchesDistance(item))
+    && (exclude === "cuisine" || matchesCuisine(item))
+    && (exclude === "price" || matchesPrice(item))
+    && (exclude === "status" || matchesStatus(item))
+    && (exclude === "booking" || matchesBooking(item))
+    && (exclude === "menu" || matchesMenu(item))
+    && (exclude === "opened" || matchesOpened(item))
+  );
+}
+
+function visibleRestaurants() {
+  return restaurants
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => matchesQuery(item) && matchesDistrict(item) && matchesDistance(item) && matchesCuisine(item) && matchesPrice(item) && matchesStatus(item) && matchesBooking(item) && matchesMenu(item) && matchesOpened(item))
+    .sort((left, right) => compareMissingLast(sortValue(left.item), sortValue(right.item)) || left.index - right.index)
+    .map(({ item }) => item);
+}
+
+function setSummary(box, label) {
+  const summary = box.parentElement ? box.parentElement.querySelector("summary") : null;
+  if (!summary) return;
+  const count = selected[box.dataset.group] ? selected[box.dataset.group].size : 0;
+  summary.textContent = count ? label + " (" + count + ")" : label;
+}
+
+function checkList(group, options) {
+  return options.map(option =>
+    '<label class="check"><input type="checkbox" data-group="' + group + '" value="' + esc(option.id) + '"' +
+    (selected[group].has(option.id) ? " checked" : "") + ">" +
+    "<span>" + esc(option.label) + '</span><span class="count">' + option.count + "</span></label>"
+  ).join("");
+}
+
+function buildDistrictFilters() {
+  const group = document.getElementById("group-district");
+  if (group) group.hidden = districtCatalog.length === 0;
+  const pool = poolFor("district");
+  const options = districtCatalog.map(item => {
+    const loaded = districtData.get(item.id);
+    const count = loaded
+      ? pool.filter(row => String(row.district || "") === item.id).length
+      : (Number(item.card_count) || 0);
+    return { id: item.id, label: item.name, count };
+  });
+  districtsEl.innerHTML = checkList("district", options);
+  setSummary(districtsEl, "地區");
+}
+
+function buildDistanceFilters() {
+  const pool = poolFor("distance");
+  const options = DISTANCES.map(band => ({
+    id: band.id,
+    label: band.label,
+    count: pool.filter(item => {
+      const meters = itemDistance(item);
+      return meters != null && meters <= band.max;
+    }).length
+  }));
+  distancesEl.innerHTML = checkList("distance", options);
+  setSummary(distancesEl, "距離");
+}
+
+function buildCuisineFilters() {
+  const pool = poolFor("cuisine");
+  const counts = {};
+  pool.forEach(item => {
+    new Set(itemCuisines(item)).forEach(name => {
+      counts[name] = (counts[name] || 0) + 1;
+    });
+  });
+  selected.cuisine.forEach(name => {
+    if (!(name in counts)) counts[name] = 0;
+  });
+  const names = Object.keys(counts).sort((left, right) => (counts[right] - counts[left]) || left.localeCompare(right, "zh-HK"));
+  const options = names.map(name => ({ id: name, label: name, count: counts[name] || 0 }));
+  cuisinesEl.innerHTML = checkList("cuisine", options);
+  setSummary(cuisinesEl, "菜式");
+}
+
+function buildOpenedFilters() {
+  const pool = poolFor("opened");
+  const today = hkClock(new Date()).ymd;
+  const presets = document.getElementById("opened-presets");
+  presets.innerHTML = OPENED_PRESETS.map(preset => {
+    const date = shiftMonths(today, preset.months);
+    const count = pool.filter(item => typeof item.opened_on === "string" && item.opened_on >= date).length;
+    const on = openedOn === date ? " on" : "";
+    return '<button type="button" class="preset' + on + '" data-opened="' + date + '">' + esc(preset.label) + " " + count + "</button>";
+  }).join("");
+  if (openedEl.value !== openedOn) openedEl.value = openedOn;
+  const summary = document.querySelector("#group-opened summary");
+  if (summary) summary.textContent = openedOn ? "開張日期 (1)" : "開張日期";
+}
+
+function buildPriceFilters() {
+  const pool = poolFor("price");
+  const counts = {};
+  const labels = {};
+  pool.forEach(item => {
+    const id = priceId(item);
+    if (!id) return;
+    counts[id] = (counts[id] || 0) + 1;
+    labels[id] = priceLabel(item);
+  });
+  selected.price.forEach(id => {
+    if (!(id in counts)) counts[id] = 0;
+  });
+  const ids = PRICE_ORDER.filter(id => counts[id] != null);
+  Object.keys(counts).forEach(id => {
+    if (!ids.includes(id)) ids.push(id);
+  });
+  const options = ids.map(id => ({
+    id,
+    label: labels[id] || ("價錢 " + id),
+    count: counts[id] || 0
+  }));
+  pricesEl.innerHTML = checkList("price", options);
+  setSummary(pricesEl, "價錢");
+}
+
+function buildStatusFilters() {
+  const pool = poolFor("status");
+  const counts = {};
+  pool.forEach(item => {
+    const state = openingStatus(item.hours, new Date()).state;
+    counts[state] = (counts[state] || 0) + 1;
+  });
+  const options = STATUSES.map(item => ({
+    id: item.id,
+    label: item.label,
+    count: counts[item.id] || 0
+  }));
+  statusesEl.innerHTML = checkList("status", options);
+  setSummary(statusesEl, "狀態");
+}
+
+function buildBookingFilters() {
+  const pool = poolFor("booking");
+  const bookable = pool.filter(item => item.bookable === true).length;
+  const options = BOOKINGS.map(item => ({
+    id: item.id,
+    label: item.label,
+    count: item.id === "bookable" ? bookable : pool.length - bookable
+  }));
+  bookingsEl.innerHTML = checkList("booking", options);
+  setSummary(bookingsEl, "訂座");
+}
+
+function buildMenuFilters() {
+  const pool = poolFor("menu");
+  const withMenu = pool.filter(item => photoCounts(item).menu > 0).length;
+  const options = MENU_FILTERS.map(item => ({
+    id: item.id,
+    label: item.label,
+    count: item.id === "yes" ? withMenu : pool.length - withMenu
+  }));
+  menusEl.innerHTML = checkList("menu", options);
+  setSummary(menusEl, "餐牌");
+}
+
+function mapsQuery(item, preferPin) {
+  const lat = Number(item.lat);
+  const lng = Number(item.lng);
+  const hasPin = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const query = preferPin && hasPin
+    ? lat + "," + lng
+    : [item.name, item.address].filter(part => typeof part === "string" && part.trim()).join(" ");
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
+}
+
+function addressLine(item) {
+  const text = typeof item.address === "string" ? item.address.trim() : "";
+  const lat = Number(item.lat);
+  const lng = Number(item.lng);
+  const hasPin = Number.isFinite(lat) && Number.isFinite(lng);
+  if (!text && !hasPin) return '<div class="address">地址未有</div>';
+  const label = text || "在 Google 地圖查看";
+  return '<a class="address" href="' + esc(mapsQuery(item, true)) + '" target="_blank" rel="noopener">' + esc(label) + "</a>";
+}
+
+function card(item) {
+  const cover = item.cover
+    ? '<button type="button" class="coverbtn" data-cover="' + esc(item.poi_id) + '"><img src="' + esc(item.cover) + '" alt="' + esc(item.name || "店面") + '" loading="lazy" decoding="async"></button>'
+    : '<div class="ph">未有店面相片</div>';
+  const counts = photoCounts(item);
+  const albumBtn = (key, label) => counts[key]
+    ? '<button type="button" data-album="' + key + '" data-poi="' + esc(item.poi_id) + '">' + label + " (" + counts[key] + ")</button>"
+    : '<button type="button" disabled>' + label + " (0)</button>";
+  const smile = Number(item.score_smile);
+  const cry = Number(item.score_cry);
+  const openrice = "😊 " + (Number.isFinite(smile) ? smile : 0) + " · 😢 " + (Number.isFinite(cry) ? cry : 0);
+  const status = openingStatus(item.hours, new Date());
+  const nowMinutes = hkClock(new Date()).minutes;
+  let today = status.ranges == null ? "未有營業時間" : "今日 " + formatRanges(status.ranges);
+  if (status.state === "open" && Array.isArray(status.ranges) && !rangeCovers(status.ranges, nowMinutes, false)) {
+    today = "跨夜營業中 · " + today;
+  }
+  const weekText = item.hours && typeof item.hours.text === "string" ? item.hours.text : "";
+  const hours = weekText
+    ? '<details class="hours"><summary><span class="dot ' + status.state + '"></span>' + esc(status.label) + " · " + esc(today) + '</summary><div class="week">' + esc(weekText) + "</div></details>"
+    : '<div class="hours"><span class="dot ' + status.state + '"></span>' + esc(status.label) + " · " + esc(today) + "</div>";
+  const book = item.bookable === true
+    ? (item.booking_url
+      ? '<a class="book" href="' + esc(item.booking_url) + '" target="_blank" rel="noopener">可訂座</a>'
+      : '<span class="book">可訂座</span>')
+    : "";
+  return '<article>' + cover +
+    '<div class="body"><div class="name">' + esc(item.name || "") + "</div>" +
+    '<div class="sub">' + esc(cuisineName(item)) + " · " + esc(priceLabel(item)) + "</div>" +
+    addressLine(item) +
+    '<div class="distance">距離 ' + esc(formatDistance(itemDistance(item))) + "</div>" +
+    '<div class="distance">開張日期 ' + esc(typeof item.opened_on === "string" && item.opened_on ? item.opened_on : "—") + "</div>" +
+    hours +
+    '<div class="rating">' + openrice + "</div>" +
+    '<div class="links"><a class="source" href="' + esc(item.url) + '" target="_blank" rel="noopener">OpenRice</a>' +
+    '<a class="book" href="' + esc(mapsQuery(item, false)) + '" target="_blank" rel="noopener">Google 評分</a>' +
+    book + albumBtn("menu", "餐牌") + albumBtn("environment", "環境") + albumBtn("food", "食物") + "</div></div></article>";
+}
+
+function render() {
+  const rows = visibleRestaurants();
+  const slice = rows.slice(0, shownCount);
+  let html = slice.map(card).join("");
+  if (!slice.length) html = '<p class="empty">沒有符合條件的餐廳</p>';
+  else if (slice.length < rows.length) {
+    html += '<button type="button" id="more" class="more">顯示更多（' + slice.length + " / " + rows.length + "）</button>";
+  }
+  grid.innerHTML = html;
+  const more = document.getElementById("more");
+  if (more) moreObserver.observe(more);
+  const withMenu = rows.filter(item => photoCounts(item).menu > 0).length;
+  shownEl.textContent = "顯示 " + slice.length + " / " + rows.length + " 間 · 有餐牌 " + withMenu + " 間";
+}
+
+function loadMore() {
+  const total = visibleRestaurants().length;
+  if (shownCount >= total) return;
+  shownCount = Math.min(total, shownCount + PAGE_SIZE);
+  render();
+}
+
+const moreObserver = new IntersectionObserver(entries => {
+  if (entries.some(entry => entry.isIntersecting)) loadMore();
+}, { rootMargin: "600px" });
+
+function rebuildFilters() {
+  buildDistrictFilters();
+  buildStatusFilters();
+  buildBookingFilters();
+  buildMenuFilters();
+  buildDistanceFilters();
+  buildCuisineFilters();
+  buildPriceFilters();
+  buildOpenedFilters();
+}
+
+function refreshControls() {
+  shownCount = PAGE_SIZE;
+  rebuildFilters();
+  render();
+  const where = origin.address ? origin.label + "（" + origin.address + "）" : origin.label;
+  originNote.textContent = "距離由「" + where + "」計算。同一組篩選可多選（或），不同組要同時符合。營業狀態按香港時間計算。";
+}
+
+function writeFilters() {
+  const url = new URL(location.href);
+  FILTER_KEYS.forEach(key => {
+    url.searchParams.delete(key);
+    selected[key].forEach(value => url.searchParams.append(key, value));
+  });
+  if (districtCatalog.length && !selected.district.size) url.searchParams.append("district", "");
+  if (query) url.searchParams.set("q", query);
+  else url.searchParams.delete("q");
+  if (sortKey !== "distance_asc") url.searchParams.set("sort", sortKey);
+  else url.searchParams.delete("sort");
+  if (openedOn) url.searchParams.set("opened", openedOn);
+  else url.searchParams.delete("opened");
+  history.replaceState(history.state, "", url);
+}
+
+function readFilters() {
+  const params = new URLSearchParams(location.search);
+  FILTER_KEYS.forEach(key => {
+    selected[key] = new Set(params.getAll(key).filter(value => value));
+  });
+  const q = params.get("q");
+  if (q) {
+    searchEl.value = q;
+    query = q.trim().toLowerCase();
+  }
+  const sort = params.get("sort");
+  if (sort && [...sortEl.options].some(option => option.value === sort)) {
+    sortKey = sort;
+    sortEl.value = sort;
+  }
+  const opened = params.get("opened");
+  openedOn = opened && /^\d{4}-\d{2}-\d{2}$/.test(opened) ? opened : "";
+  openedEl.value = openedOn;
+}
+
+function filterGroups() {
+  return [...document.querySelectorAll("details.group")].filter(group => !group.hidden);
+}
+
+function syncFilterToggle() {
+  const button = document.getElementById("filter-toggle");
+  const groups = filterGroups();
+  const open = groups.length > 0 && groups.every(group => group.open);
+  button.classList.toggle("open", open);
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+  button.textContent = open ? "收合篩選" : "篩選";
+}
+
+function setAllGroups(open) {
+  filterGroups().forEach(group => {
+    group.open = open;
+  });
+  syncFilterToggle();
+}
+
+function initGroupOpen() {
+  document.querySelectorAll("details.group").forEach(group => {
+    group.open = false;
+    group.addEventListener("toggle", syncFilterToggle);
+  });
+  syncFilterToggle();
+}
+
+function resetFilters() {
+  FILTER_KEYS.forEach(key => selected[key].clear());
+  if (districtCatalog.length) selected.district = new Set([DEFAULT_DISTRICT]);
+  query = "";
+  searchEl.value = "";
+  openedOn = "";
+  openedEl.value = "";
+  writeFilters();
+  const pending = districtCatalog.length ? ensureRestaurants() : Promise.resolve();
+  pending.then(() => refreshControls()).catch(showLoadError);
+}
+
+function refreshLiveStatus() {
+  rebuildFilters();
+  render();
+}
+
+function findById(poi) {
+  return restaurants.find(item => String(item.poi_id) === String(poi));
+}
+
+function showSlide(index) {
+  if (!slides.length) return;
+  slideIndex = (index + slides.length) % slides.length;
+  const slide = slides[slideIndex];
+  modalImg.src = slide.image;
+  modalImg.alt = slide.meal || "餐牌";
+  modalTitle.textContent = slide.meal || "餐牌";
+  modalCount.textContent = (slideIndex + 1) + "/" + slides.length;
+  const when = typeof slide.time === "string" ? slide.time : "";
+  modalDate.textContent = when;
+  modalDate.hidden = !when;
+  if (slide.source_url) {
+    modalSource.hidden = false;
+    modalSource.href = slide.source_url;
+  } else {
+    modalSource.hidden = true;
+  }
+  const single = slides.length < 2;
+  modalPrev.hidden = single;
+  modalNext.hidden = single;
+}
+
+let listScroll = 0;
+let historyLock = false;
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+function hashParams() {
+  return new URLSearchParams(location.hash.replace(/^#/, ""));
+}
+
+function layerHash(poi, cat, photo) {
+  const hash = new URLSearchParams();
+  hash.set("album", poi);
+  if (cat) hash.set("cat", cat);
+  if (photo != null) hash.set("photo", String(photo));
+  return hash.toString();
+}
+
+function setHash(hash, state, mode) {
+  const url = new URL(location.href);
+  url.hash = hash || "";
+  if (mode === "push") history.pushState(state, "", url);
+  else history.replaceState(state, "", url);
+}
+
+function lockPage() {
+  if (document.body.style.position === "fixed") return;
+  listScroll = window.scrollY;
+  document.body.style.top = "-" + listScroll + "px";
+  document.body.style.position = "fixed";
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+
+function unlockPage() {
+  if (document.body.style.position !== "fixed") return;
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  window.scrollTo(0, listScroll);
+}
+
+function openSlides(nextSlides, start, fromHistory) {
+  slides = nextSlides.filter(slide => slide && slide.image);
+  if (!slides.length) return;
+  modal.hidden = false;
+  lockPage();
+  const index = Number.isInteger(start) ? start : 0;
+  showSlide(index);
+  if (!fromHistory && !historyLock) {
+    if (albumPoi && !album.hidden) {
+      const hash = hashParams();
+      const state = { album: albumPoi, cat: albumTab, photo: slideIndex };
+      if (hash.get("photo") == null) setHash(layerHash(albumPoi, albumTab, slideIndex), state, "push");
+      else setHash(layerHash(albumPoi, albumTab, slideIndex), state, "replace");
+    }
+  }
+  document.getElementById("modal-close").focus();
+}
+
+function dismissModal() {
+  modal.hidden = true;
+  modalImg.removeAttribute("src");
+  slides = [];
+  if (album.hidden) unlockPage();
+}
+
+function requestCloseModal() {
+  const hash = hashParams();
+  if (!historyLock && (hash.has("photo") || hash.has("cover"))) {
+    history.back();
+    return;
+  }
+  dismissModal();
+}
+
+function stepSlide(delta) {
+  if (modal.hidden || slides.length < 2) return;
+  showSlide(slideIndex + delta);
+  if (!historyLock && albumPoi && hashParams().has("photo")) {
+    setHash(layerHash(albumPoi, albumTab, slideIndex), { album: albumPoi, cat: albumTab, photo: slideIndex }, "replace");
+  }
+}
+
+function readOrigin() {
+  const params = new URLSearchParams(location.search);
+  const latRaw = params.get("lat");
+  const lngRaw = params.get("lng");
+  const lat = latRaw == null ? NaN : Number(latRaw);
+  const lng = lngRaw == null ? NaN : Number(lngRaw);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+    const preset = ORIGINS.find(item => Math.abs(item.lat - lat) < 0.0003 && Math.abs(item.lng - lng) < 0.0003);
+    if (preset) return preset;
+    return {
+      id: "custom",
+      label: params.get("label") || "自訂位置",
+      address: "",
+      lat,
+      lng
+    };
+  }
+  const id = params.get("origin") || ORIGINS[0].id;
+  return ORIGINS.find(item => item.id === id) || ORIGINS[0];
+}
+
+function writeOrigin(next, mode) {
+  origin = next;
+  const url = new URL(location.href);
+  if (mode === "preset") {
+    url.searchParams.set("origin", next.id);
+    url.searchParams.delete("lat");
+    url.searchParams.delete("lng");
+    url.searchParams.delete("label");
+  } else {
+    url.searchParams.delete("origin");
+    url.searchParams.set("lat", next.lat.toFixed(6));
+    url.searchParams.set("lng", next.lng.toFixed(6));
+    if (next.label && next.label !== "自訂位置") url.searchParams.set("label", next.label);
+  }
+  history.replaceState(history.state, "", url);
+  fillOriginSelect();
+  refreshControls();
+}
+
+function fillOriginSelect() {
+  const options = ORIGINS.map(item =>
+    '<option value="' + esc(item.id) + '">' + esc(item.label) + "</option>"
+  );
+  options.push('<option value="custom">自訂位置</option>');
+  originEl.innerHTML = options.join("");
+  originEl.value = ORIGINS.some(item => item.id === origin.id) ? origin.id : "custom";
+}
+
+sortEl.addEventListener("change", () => {
+  sortKey = sortEl.value;
+  writeFilters();
+  render();
+});
+
+searchEl.addEventListener("input", () => {
+  query = searchEl.value.trim().toLowerCase();
+  writeFilters();
+  refreshControls();
+});
+
+originEl.addEventListener("change", () => {
+  const preset = ORIGINS.find(item => item.id === originEl.value);
+  if (!preset) return;
+  writeOrigin(preset, "preset");
+});
+
+document.getElementById("geo").addEventListener("click", () => {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(position => {
+    writeOrigin({
+      id: "custom",
+      label: "我的位置",
+      address: "",
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    }, "custom");
+  });
+});
+
+document.getElementById("reset").addEventListener("click", resetFilters);
+
+document.getElementById("filter-toggle").addEventListener("click", () => {
+  const groups = filterGroups();
+  setAllGroups(!groups.every(group => group.open));
+});
+
+groupsEl.addEventListener("change", event => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || input.type !== "checkbox") return;
+  const group = input.dataset.group;
+  if (!selected[group]) return;
+  if (input.checked) selected[group].add(input.value);
+  else selected[group].delete(input.value);
+  writeFilters();
+  if (group === "district") {
+    ensureRestaurants().then(() => refreshControls()).catch(showLoadError);
+    return;
+  }
+  refreshControls();
+});
+
+document.getElementById("opened-presets").addEventListener("click", event => {
+  const button = event.target.closest("[data-opened]");
+  if (!button) return;
+  openedOn = button.dataset.opened || "";
+  writeFilters();
+  refreshControls();
+});
+
+openedEl.addEventListener("change", () => {
+  openedOn = /^\d{4}-\d{2}-\d{2}$/.test(openedEl.value) ? openedEl.value : "";
+  writeFilters();
+  refreshControls();
+});
+
+function normalizeAlbum(payload) {
+  const out = { menu: [], environment: [], food: [] };
+  ALBUM_KEYS().forEach(key => {
+    const list = payload && Array.isArray(payload[key]) ? payload[key] : [];
+    out[key] = list.filter(item => item && (item.full || item.thumb)).map(item => ({
+      thumb: item.thumb || derivedThumb(item.full) || item.full,
+      full: item.full || item.thumb,
+      time: typeof item.time === "string" ? item.time : "",
+      caption: typeof item.caption === "string" ? item.caption : "",
+      source: typeof item.source === "string" ? item.source : ""
+    }));
+    const declared = payload ? Number(payload[key + "_total"]) : 0;
+    out[key + "_total"] = Number.isFinite(declared) && declared > 0 ? Math.floor(declared) : out[key].length;
+  });
+  return out;
+}
+
+function ALBUM_KEYS() {
+  return ["menu", "environment", "food"];
+}
+
+function sortedAlbum(list) {
+  const copy = list.slice();
+  copy.sort((a, b) => {
+    const left = a.time || "";
+    const right = b.time || "";
+    if (!left && !right) return 0;
+    if (!left) return 1;
+    if (!right) return -1;
+    if (left === right) return 0;
+    if (albumNewest) return left < right ? 1 : -1;
+    return left < right ? -1 : 1;
+  });
+  return copy;
+}
+
+function albumSlides(list) {
+  return list.map(photo => ({
+    image: photo.full,
+    meal: photo.caption || ALBUM_LABELS[albumTab] || "相片",
+    source_url: photo.source || "",
+    time: photoDate(photo.time)
+  }));
+}
+
+function categoryPhotosUrl(item) {
+  const base = item && typeof item.url === "string" ? item.url.replace(/\/$/, "") : "";
+  const typeId = ALBUM_TYPE_IDS[albumTab] || 1;
+  return base ? base + "/photos?photoTypeId=" + typeId : "https://www.openrice.com/";
+}
+
+function syncAlbumNote(listLength) {
+  const item = findById(albumPoi);
+  const payload = albumCache.get(albumPoi);
+  const fromFile = payload ? Number(payload[albumTab + "_total"]) : 0;
+  const total = Math.max(item ? photoCounts(item)[albumTab] : 0, Number.isFinite(fromFile) ? fromFile : 0);
+  if (total > listLength && listLength >= 50) {
+    albumNote.hidden = false;
+    albumNote.innerHTML = '顯示最新 50 張，更多請到 <a href="' + esc(categoryPhotosUrl(item)) + '" target="_blank" rel="noopener">OpenRice</a>';
+    return;
+  }
+  albumNote.hidden = true;
+  albumNote.textContent = "";
+}
+
+function renderAlbum() {
+  const payload = albumCache.get(albumPoi);
+  const list = payload ? sortedAlbum(payload[albumTab] || []) : [];
+  const slice = list.slice(0, albumShown);
+  let html = slice.map((photo, index) => {
+    const when = photoDate(photo.time);
+    const date = when ? '<span class="thumb-date">' + esc(when) + "</span>" : "";
+    return '<button type="button" class="thumb" data-index="' + index + '">' +
+      '<img src="' + esc(photo.thumb) + '" alt="" loading="lazy" decoding="async">' +
+      date + "</button>";
+  }).join("");
+  if (!slice.length) html = '<p class="empty">這個分類未有相片</p>';
+  albumGrid.innerHTML = html;
+  syncAlbumNote(list.length);
+  let more = document.getElementById("album-more");
+  if (slice.length && slice.length < list.length) {
+    if (!more) {
+      more = document.createElement("div");
+      more.id = "album-more";
+      albumScroll.appendChild(more);
+    }
+    albumObserver.observe(more);
+  } else if (more) {
+    more.remove();
+  }
+}
+
+function syncAlbumTabs(item) {
+  const counts = photoCounts(item);
+  document.querySelectorAll("#album-tabs button").forEach(button => {
+    const key = button.dataset.tab;
+    const count = counts[key] || 0;
+    button.disabled = count === 0;
+    button.classList.toggle("on", key === albumTab);
+    button.textContent = (ALBUM_LABELS[key] || key) + " (" + count + ")";
+  });
+  albumSort.textContent = albumNewest ? "最新" : "最舊";
+  albumSort.setAttribute("aria-pressed", albumNewest ? "false" : "true");
+}
+
+function dismissAlbum() {
+  album.hidden = true;
+  albumGrid.innerHTML = "";
+  const more = document.getElementById("album-more");
+  if (more) more.remove();
+  albumNote.hidden = true;
+  albumPoi = "";
+  if (modal.hidden) unlockPage();
+}
+
+function requestCloseAlbum() {
+  if (!historyLock && hashParams().has("album")) {
+    history.back();
+    return;
+  }
+  dismissAlbum();
+}
+
+async function openAlbum(item, tab, fromHistory) {
+  const counts = photoCounts(item);
+  const nextTab = counts[tab] ? tab : ALBUM_KEYS().find(key => counts[key]) || tab;
+  albumPoi = String(item.poi_id);
+  albumTab = nextTab;
+  albumNewest = true;
+  albumShown = ALBUM_PAGE;
+  album.hidden = false;
+  lockPage();
+  albumTitle.textContent = item.name || "";
+  syncAlbumTabs(item);
+  albumGrid.innerHTML = '<p class="empty">載入中…</p>';
+  albumScroll.scrollTop = 0;
+  if (!fromHistory && !historyLock) {
+    const hash = hashParams();
+    const state = { album: albumPoi, cat: albumTab, photo: null };
+    if (hash.get("album") !== albumPoi) setHash(layerHash(albumPoi, albumTab, null), state, "push");
+    else setHash(layerHash(albumPoi, albumTab, null), state, "replace");
+  }
+  try {
+    let payload = albumCache.get(albumPoi);
+    if (!payload) {
+      const district = item.district || DEFAULT_DISTRICT;
+      const response = await fetch("./data/" + encodeURIComponent(district) + "/photos/" + encodeURIComponent(albumPoi) + ".json");
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      payload = normalizeAlbum(await response.json());
+      albumCache.set(albumPoi, payload);
+    }
+    if (albumPoi !== String(item.poi_id) || album.hidden) return;
+    renderAlbum();
+  } catch (error) {
+    if (albumPoi !== String(item.poi_id)) return;
+    const legacy = menuList(item).map(menu => ({
+      full: menu.image,
+      thumb: menu.image,
+      caption: menu.meal || "",
+      source: menu.source_url || ""
+    }));
+    if (legacy.length) {
+      const payload = normalizeAlbum({ menu: legacy, environment: [], food: [] });
+      albumCache.set(albumPoi, payload);
+      renderAlbum();
+      return;
+    }
+    albumGrid.innerHTML = '<p class="empty">未能載入相片</p>';
+  }
+}
+
+const albumObserver = new IntersectionObserver(entries => {
+  if (!entries.some(entry => entry.isIntersecting)) return;
+  const payload = albumCache.get(albumPoi);
+  const total = payload ? (payload[albumTab] || []).length : 0;
+  if (albumShown >= total) return;
+  albumShown = Math.min(total, albumShown + ALBUM_PAGE);
+  renderAlbum();
+}, { root: albumScroll, rootMargin: "400px" });
+
+document.getElementById("album-back").addEventListener("click", requestCloseAlbum);
+albumSort.addEventListener("click", () => {
+  if (!albumPoi) return;
+  albumNewest = !albumNewest;
+  albumShown = ALBUM_PAGE;
+  const item = findById(albumPoi);
+  if (item) syncAlbumTabs(item);
+  albumScroll.scrollTop = 0;
+  renderAlbum();
+});
+document.getElementById("album-tabs").addEventListener("click", event => {
+  const button = event.target.closest("[data-tab]");
+  if (!button || button.disabled || !albumPoi) return;
+  albumTab = button.dataset.tab || albumTab;
+  albumShown = ALBUM_PAGE;
+  const item = findById(albumPoi);
+  if (item) syncAlbumTabs(item);
+  albumScroll.scrollTop = 0;
+  if (!historyLock && hashParams().has("album")) {
+    setHash(layerHash(albumPoi, albumTab, null), { album: albumPoi, cat: albumTab, photo: null }, "replace");
+  }
+  renderAlbum();
+});
+albumGrid.addEventListener("click", event => {
+  const button = event.target.closest("[data-index]");
+  if (!button || !albumGrid.contains(button)) return;
+  const payload = albumCache.get(albumPoi);
+  if (!payload) return;
+  const list = sortedAlbum(payload[albumTab] || []);
+  const index = Number(button.dataset.index);
+  if (!Number.isInteger(index)) return;
+  openSlides(albumSlides(list), index);
+});
+
+grid.addEventListener("click", event => {
+  if (event.target.closest("#more")) {
+    loadMore();
+    return;
+  }
+  const albumBtn = event.target.closest("[data-album]");
+  if (albumBtn && grid.contains(albumBtn)) {
+    const item = findById(albumBtn.dataset.poi);
+    if (!item) return;
+    openAlbum(item, albumBtn.dataset.album || "menu");
+    return;
+  }
+  const coverBtn = event.target.closest("[data-cover]");
+  if (coverBtn && grid.contains(coverBtn)) {
+    const item = findById(coverBtn.dataset.cover);
+    if (!item || !item.cover) return;
+    openSlides([{ image: item.cover, meal: "店面", source_url: item.url || "" }], 0, true);
+    if (!historyLock) setHash("cover=" + encodeURIComponent(item.poi_id), { cover: String(item.poi_id) }, "push");
+  }
+});
+
+grid.addEventListener("error", event => {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  const ph = document.createElement("div");
+  ph.className = "ph";
+  ph.textContent = "未有店面相片";
+  const button = img.closest("button");
+  if (button) button.replaceWith(ph);
+  else img.replaceWith(ph);
+}, true);
+
+document.getElementById("modal-close").addEventListener("click", requestCloseModal);
+modalPrev.addEventListener("click", () => stepSlide(-1));
+modalNext.addEventListener("click", () => stepSlide(1));
+modal.addEventListener("click", event => {
+  if (event.target === modal) requestCloseModal();
+});
+document.addEventListener("keydown", event => {
+  if (!modal.hidden) {
+    if (event.key === "Escape") requestCloseModal();
+    else if (event.key === "ArrowLeft") stepSlide(-1);
+    else if (event.key === "ArrowRight") stepSlide(1);
+    return;
+  }
+  if (!album.hidden && event.key === "Escape") requestCloseAlbum();
+});
+let touchX = null;
+modal.addEventListener("touchstart", event => {
+  touchX = event.changedTouches[0] ? event.changedTouches[0].clientX : null;
+}, { passive: true });
+modal.addEventListener("touchend", event => {
+  if (touchX == null || !event.changedTouches[0]) return;
+  const delta = event.changedTouches[0].clientX - touchX;
+  if (delta > 50) stepSlide(-1);
+  else if (delta < -50) stepSlide(1);
+  touchX = null;
+}, { passive: true });
+
+async function openLinkedLayer() {
+  const hash = hashParams();
+  const albumId = hash.get("album");
+  const coverId = hash.get("cover");
+  if (!albumId && !coverId) return;
+  const cat = hash.get("cat") || "menu";
+  const photoRaw = hash.get("photo");
+  const photo = photoRaw == null || photoRaw === "" ? null : Number(photoRaw);
+  const url = new URL(location.href);
+  url.hash = "";
+  history.replaceState(null, "", url);
+  if (albumId) {
+    url.hash = layerHash(albumId, cat, null);
+    history.pushState({ album: albumId, cat, photo: null }, "", url);
+  }
+  if (coverId && !albumId) {
+    url.hash = "cover=" + encodeURIComponent(coverId);
+    history.pushState({ cover: coverId }, "", url);
+  }
+  if (albumId && Number.isInteger(photo)) {
+    url.hash = layerHash(albumId, cat, photo);
+    history.pushState({ album: albumId, cat, photo }, "", url);
+  }
+  historyLock = true;
+  try {
+    if (coverId && !albumId) {
+      const item = findById(coverId);
+      if (item && item.cover) openSlides([{ image: item.cover, meal: "店面", source_url: item.url || "" }], 0, true);
+      return;
+    }
+    const item = findById(albumId);
+    if (!item) return;
+    await openAlbum(item, cat, true);
+    if (Number.isInteger(photo)) {
+      const payload = albumCache.get(String(item.poi_id));
+      if (!payload) return;
+      openSlides(albumSlides(sortedAlbum(payload[albumTab] || [])), photo, true);
+    }
+  } finally {
+    historyLock = false;
+  }
+}
+
+async function syncFromPop() {
+  const hash = hashParams();
+  historyLock = true;
+  try {
+    if (!hash.get("album") && !hash.get("cover")) {
+      if (!modal.hidden) dismissModal();
+      if (!album.hidden) dismissAlbum();
+      return;
+    }
+    if (hash.get("cover") && !hash.get("album")) {
+      if (!album.hidden) dismissAlbum();
+      const item = findById(hash.get("cover"));
+      if (!item || !item.cover) {
+        dismissModal();
+        return;
+      }
+      if (modal.hidden) openSlides([{ image: item.cover, meal: "店面", source_url: item.url || "" }], 0, true);
+      return;
+    }
+    const item = findById(hash.get("album"));
+    if (!item) {
+      dismissModal();
+      dismissAlbum();
+      return;
+    }
+    const cat = hash.get("cat") || "menu";
+    if (album.hidden || albumPoi !== String(item.poi_id)) await openAlbum(item, cat, true);
+    else if (albumTab !== cat) {
+      albumTab = cat;
+      albumShown = ALBUM_PAGE;
+      syncAlbumTabs(item);
+      albumScroll.scrollTop = 0;
+      renderAlbum();
+    }
+    const photoRaw = hash.get("photo");
+    const photo = photoRaw == null || photoRaw === "" ? null : Number(photoRaw);
+    if (Number.isInteger(photo)) {
+      const payload = albumCache.get(albumPoi);
+      if (payload) {
+        const list = sortedAlbum(payload[albumTab] || []);
+        if (modal.hidden) openSlides(albumSlides(list), photo, true);
+        else showSlide(photo);
+      }
+    } else if (!modal.hidden) {
+      dismissModal();
+    }
+  } finally {
+    historyLock = false;
+  }
+}
+
+window.addEventListener("popstate", () => {
+  syncFromPop();
+});
+
+origin = readOrigin();
+fillOriginSelect();
+readFilters();
+initGroupOpen();
+
+function showLoadError(error) {
+  updatedEl.textContent = "";
+  statusEl.hidden = false;
+  statusEl.textContent = "讀取餐廳資料失敗。請用 GitHub Pages 或本機靜態伺服器開啟（file:// 會擋住 fetch）。" +
+    (error && error.message ? " " + error.message : "");
+}
+
+function applyDistrictSelection() {
+  const params = new URLSearchParams(location.search);
+  const known = new Set(districtCatalog.map(item => item.id));
+  if (!params.has("district")) {
+    const fallback = known.has(DEFAULT_DISTRICT) ? DEFAULT_DISTRICT : (districtCatalog[0] && districtCatalog[0].id);
+    selected.district = new Set(fallback ? [fallback] : []);
+    return;
+  }
+  selected.district = new Set(params.getAll("district").filter(id => known.has(id)));
+}
+
+async function ensureRestaurants() {
+  const wanted = [...selected.district];
+  await Promise.all(wanted.map(async id => {
+    if (districtData.has(id)) return;
+    const response = await fetch("./data/" + encodeURIComponent(id) + "/restaurants.json");
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const payload = await response.json();
+    const list = Array.isArray(payload.restaurants) ? payload.restaurants : [];
+    list.forEach(item => {
+      if (!item.district) item.district = id;
+    });
+    districtData.set(id, { restaurants: list, meta: payload.meta || {} });
+  }));
+  restaurants = wanted.flatMap(id => {
+    const loaded = districtData.get(id);
+    return loaded ? loaded.restaurants : [];
+  });
+  const holidays = new Set();
+  let updated = "";
+  wanted.forEach(id => {
+    const loaded = districtData.get(id);
+    const meta = loaded ? loaded.meta : {};
+    const days = Array.isArray(meta.public_holidays) ? meta.public_holidays : [];
+    days.forEach(day => {
+      if (typeof day === "string") holidays.add(day);
+    });
+    if (typeof meta.updated_at === "string" && meta.updated_at > updated) updated = meta.updated_at;
+  });
+  holidaySet = holidays;
+  const formatted = formatUpdated(updated);
+  updatedEl.textContent = formatted ? "資料更新：" + formatted + " HKT" : "";
+}
+
+fetch("./data/districts.json")
+  .then(response => {
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    return response.json();
+  })
+  .then(payload => {
+    const list = payload && Array.isArray(payload.districts) ? payload.districts : [];
+    districtCatalog.splice(0, districtCatalog.length, ...list.filter(item => item && item.id && item.name));
+    applyDistrictSelection();
+    return ensureRestaurants();
+  })
+  .then(() => {
+    refreshControls();
+    setInterval(refreshLiveStatus, 60000);
+    return openLinkedLayer();
+  })
+  .catch(showLoadError);
+</script>
+</body>
+</html>

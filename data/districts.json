@@ -1,0 +1,17 @@
+{
+  "districts": [
+    {
+      "id": "tst",
+      "name": "尖沙咀",
+      "openrice_district_id": 2008,
+      "origin": {
+        "id": "mira-place-1",
+        "label": "美麗華廣場一期",
+        "address": "尖沙咀彌敦道132號",
+        "lat": 22.301111,
+        "lng": 114.172222
+      },
+      "card_count": 2132
+    }
+  ]
+}
