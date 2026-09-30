@@ -64,6 +64,19 @@
         "lng": 114.1718
       },
       "card_count": 589
+    },
+    {
+      "id": "ymt",
+      "name": "油麻地",
+      "openrice_district_id": 2011,
+      "origin": {
+        "id": "ymt-station",
+        "label": "油麻地站",
+        "address": "油麻地彌敦道",
+        "lat": 22.3129,
+        "lng": 114.1707
+      },
+      "card_count": 305
     }
   ]
 }
