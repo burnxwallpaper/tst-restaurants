@@ -25,6 +25,19 @@
         "lng": 114.1683
       },
       "card_count": 430
+    },
+    {
+      "id": "mk",
+      "name": "旺角",
+      "openrice_district_id": 2010,
+      "origin": {
+        "id": "mk-station",
+        "label": "旺角站",
+        "address": "旺角彌敦道",
+        "lat": 22.3191,
+        "lng": 114.1694
+      },
+      "card_count": 1342
     }
   ]
 }
