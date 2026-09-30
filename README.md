@@ -1,6 +1,6 @@
 # 尖沙咀 午餐餐廳
 
-尖沙咀 OpenRice 全部餐廳（`districtId=2008`）。店面、餐牌、環境、食物相片都連到 OpenRice，不放圖片檔進這個倉庫。頁面先讀 `data/districts.json`，再讀所選地區的 `data/{district}/restaurants.json`。搜尋列在頁面最上方。頁尾是手動更新時間（`資料更新：YYYY-MM-DD HH:mm HKT`）。
+尖沙咀 OpenRice 全部餐廳（`districtId=2008`）。店面、餐牌、環境、食物相片都連到 OpenRice，不放圖片檔進這個倉庫。頁面先讀 `data/districts.json`，再讀勾選地區的 `data/{district}/restaurants.json`。沒有勾選地區時讀全部地區。搜尋列在頁面最上方。頁尾是手動更新時間（`資料更新：YYYY-MM-DD HH:mm HKT`）。
 
 網站：https://burnxwallpaper.github.io/tst-restaurants/
 
@@ -34,7 +34,7 @@ python -m http.server 8080
 
 營業狀態在頁面用香港時間，由已儲存的營業時間計算（`openingStatus(hours, date)`），不跟觀看者的時區。餐廳資料本身不會自動更新。綠點是營業中，黃點是 60 分鐘內準備營業，紅點是休息中，灰點是未有營業時間。
 
-篩選是核取方塊。同一組多選是「或」（例如日本菜加韓國菜）；不同組要同時符合。距離多選時用最遠的範圍。地區多選會載入那些地區的資料，預設尖沙咀。每一組一開始都收合，標題是組名加已選數量（例如菜式 (2)）。「篩選」會一次展開或收合全部組別。開張日期用日期選擇「此日期或之後」，也可以按近3個月、近6個月、近1年。網址會記住篩選（`district`、`status`、`booking`、`menu`、`distance`、`price`、`cuisine`、`opened`），「清除篩選」會重置並回到預設地區。相簿網址用 `#album=`、`cat=`、`photo=`，瀏覽器返回會先關燈箱再關相簿。
+「篩選」收合時只顯示按鈕（有篩選時帶數量）。打開後左邊是分類（地區、菜式、價錢、距離、營業狀態、訂座、餐牌、開張日期），右邊只顯示目前分類的選項。手機上是全螢幕，左邊約三成寬。同一組多選是「或」；一組都沒勾選就不過濾該組，地區沒勾選會載入全部地區。距離多選時用最遠的範圍。開張日期有「此日期或之後」和「此日期或之前」，留空代表該端不限。網址會記住篩選（`district`、`status`、`booking`、`menu`、`distance`、`price`、`cuisine`、`opened`、`opened_to`）。空的參數和沒有參數一樣。「清除」會清掉勾選、搜尋和日期，排序和起點保持不變。「完成」只關上篩選。相簿網址用 `#album=`、`cat=`、`photo=`，瀏覽器返回會先關燈箱再關相簿。
 
 `bookable` 為 true 代表 OpenRice 有 TableMap 訂座頁，而且訂座沒有被關掉。卡片的「可訂座」連到 `booking_url`。`useExpandLayoutBooking` 每間都是 true，不當成可訂座。
 

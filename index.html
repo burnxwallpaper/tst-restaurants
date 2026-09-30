@@ -12,29 +12,41 @@ header { padding: 12px 20px 8px; max-width: 1100px; margin: 0 auto; }
 .origin-note { color: var(--muted); margin: 0; font-size: 13px; }
 .toolbar { display:flex; flex-direction:column; gap:10px; }
 .filters { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.filter-actions { display:flex; }
-.filter-toggle { width:100%; min-height:48px; text-align:left; font-weight:700; padding:12px 16px; border-radius:12px; background:#fff; }
+.filter-toggle { width:100%; min-height:48px; text-align:left; font-weight:700; padding:12px 16px; border-radius:12px; background:#fff; display:flex; align-items:center; gap:8px; }
 .filter-toggle.open { background:#1c1917; color:#fff; border-color:#1c1917; }
-.groups { display:flex; flex-direction:column; gap:8px; }
-.group { border:1px solid var(--line); border-radius:12px; background:#fff; padding:0 12px; }
-.group[open] { padding-bottom:8px; }
-.group summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:650; }
+.filter-badge { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:#1c1917; color:#fff; font-size:12px; font-weight:700; }
+.filter-badge[hidden] { display:none; }
+.filter-toggle.open .filter-badge { background:#fff; color:#1c1917; }
+.filter-panel { border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.filter-panel[hidden] { display:none; }
+.filter-sheet { display:flex; flex-direction:column; max-height:70vh; min-height:320px; }
+.filter-columns { display:grid; grid-template-columns:30% minmax(0, 1fr); flex:1 1 auto; min-height:0; }
+.filter-tabs { display:flex; flex-direction:column; overflow:auto; min-height:0; border-right:1px solid var(--line); background:#faf7f2; }
+.filter-tab { width:100%; text-align:left; border:0; border-bottom:1px solid var(--line); border-radius:0; min-height:48px; padding:10px 12px; background:transparent; font-weight:600; }
+.filter-tab[hidden] { display:none; }
+.filter-tab.on { background:#fff; color:#1c1917; }
+.filter-panes { overflow:auto; padding:12px 14px; min-width:0; min-height:0; }
+.filter-pane { display:none; }
+.filter-pane.on { display:block; }
+.filter-foot { display:flex; gap:8px; padding:8px; border-top:1px solid var(--line); flex:0 0 auto; }
+.filter-foot button { flex:1; min-height:48px; border-radius:12px; }
 .hint { margin:0 0 8px; color:var(--muted); font-size:13px; }
-.checks { display:flex; flex-wrap:wrap; gap:4px 14px; }
-.checks.scroll { max-height:320px; overflow:auto; }
-.opened-label { display:block; color:var(--muted); font-size:13px; margin:0 0 4px; }
-#opened { width:100%; max-width:280px; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:8px 12px; font:inherit; background:#fff; }
+.checks { display:flex; flex-direction:column; align-items:stretch; gap:0; }
+.opened-label { display:block; color:var(--muted); font-size:13px; margin:12px 0 4px; }
+.opened-label:first-child { margin-top:0; }
+#opened, #opened-to { width:100%; max-width:none; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:8px 12px; font:inherit; background:#fff; }
 .presets { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .presets button { min-height:44px; }
-.check { display:inline-flex; align-items:center; gap:8px; min-height:44px; }
-.check input { width:18px; height:18px; margin:0; }
-.check .count { color:var(--muted); font-size:13px; }
-button.more-opts { min-height:44px; }
-.rowlabel { color: var(--muted); font-size: 13px; }
+.check { display:flex; align-items:center; gap:8px; min-height:44px; width:100%; }
+.check input { width:18px; height:18px; margin:0; flex:0 0 auto; }
+.check .count { color:var(--muted); font-size:13px; margin-left:auto; }
 @media (max-width: 719px) {
-  .checks { flex-direction:column; align-items:stretch; }
-  .check { width:100%; }
+  body.filter-open { overflow:hidden; }
+  .filter-panel { position:fixed; inset:0; z-index:18; display:flex; flex-direction:column; border:0; border-radius:0; background:var(--bg); padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .filter-sheet { max-height:none; height:100%; min-height:0; }
+  .filter-tabs { background:#fff; }
 }
+.rowlabel { color: var(--muted); font-size: 13px; }
 select.sort, input[type="search"] { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font: inherit; color: inherit; max-width:100%; }
 input[type="search"] { min-width: min(100%, 240px); flex: 1; }
 select.sort, select.origin { cursor:pointer; }
@@ -124,46 +136,59 @@ footer.site p { margin: 0; }
       <select id="origin" class="origin" aria-label="距離起點"></select>
       <button type="button" id="geo">使用我的位置</button>
     </div>
-    <div class="filter-actions">
-      <button type="button" id="reset">清除篩選</button>
-    </div>
-    <button type="button" id="filter-toggle" class="filter-toggle" aria-expanded="false">篩選</button>
-    <div class="groups" id="groups">
-      <details class="group" id="group-district" hidden>
-        <summary>地區</summary>
-        <div class="checks" id="districts" data-group="district"></div>
-      </details>
-      <details class="group">
-        <summary>狀態</summary>
-        <div class="checks" id="statuses" data-group="status"></div>
-      </details>
-      <details class="group">
-        <summary>訂座</summary>
-        <div class="checks" id="bookings" data-group="booking"></div>
-      </details>
-      <details class="group">
-        <summary>餐牌</summary>
-        <div class="checks" id="menus" data-group="menu"></div>
-      </details>
-      <details class="group">
-        <summary>距離</summary>
-        <p class="hint">多選時以最遠的範圍計算。</p>
-        <div class="checks" id="distances" data-group="distance"></div>
-      </details>
-      <details class="group">
-        <summary>價錢</summary>
-        <div class="checks" id="prices" data-group="price"></div>
-      </details>
-      <details class="group" id="group-opened">
-        <summary>開張日期</summary>
-        <label class="opened-label" for="opened">此日期或之後</label>
-        <input id="opened" type="date" aria-label="開張日期，此日期或之後">
-        <div class="presets" id="opened-presets"></div>
-      </details>
-      <details class="group" id="group-cuisine">
-        <summary>菜式</summary>
-        <div class="checks scroll" id="cuisines" data-group="cuisine"></div>
-      </details>
+    <button type="button" id="filter-toggle" class="filter-toggle" aria-expanded="false" aria-controls="filter-panel">篩選<span id="filter-badge" class="filter-badge" hidden></span></button>
+    <div id="filter-panel" class="filter-panel" hidden>
+      <div class="filter-sheet">
+        <div class="filter-columns">
+          <div class="filter-tabs" role="tablist">
+            <button type="button" class="filter-tab on" role="tab" data-tab="district" aria-selected="true">地區</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="cuisine" aria-selected="false">菜式</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="price" aria-selected="false">價錢</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="distance" aria-selected="false">距離</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="status" aria-selected="false">營業狀態</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="booking" aria-selected="false">訂座</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="menu" aria-selected="false">餐牌</button>
+            <button type="button" class="filter-tab" role="tab" data-tab="opened" aria-selected="false">開張日期</button>
+          </div>
+          <div class="filter-panes">
+            <section class="filter-pane on" data-pane="district">
+              <p class="hint">沒有勾選會顯示全部地區。</p>
+              <div class="checks" id="districts" data-group="district"></div>
+            </section>
+            <section class="filter-pane" data-pane="cuisine">
+              <div class="checks" id="cuisines" data-group="cuisine"></div>
+            </section>
+            <section class="filter-pane" data-pane="price">
+              <div class="checks" id="prices" data-group="price"></div>
+            </section>
+            <section class="filter-pane" data-pane="distance">
+              <p class="hint">多選時以最遠的範圍計算。沒有勾選代表不限距離。</p>
+              <div class="checks" id="distances" data-group="distance"></div>
+            </section>
+            <section class="filter-pane" data-pane="status">
+              <div class="checks" id="statuses" data-group="status"></div>
+            </section>
+            <section class="filter-pane" data-pane="booking">
+              <div class="checks" id="bookings" data-group="booking"></div>
+            </section>
+            <section class="filter-pane" data-pane="menu">
+              <div class="checks" id="menus" data-group="menu"></div>
+            </section>
+            <section class="filter-pane" data-pane="opened">
+              <p class="hint">留空代表該端不限。</p>
+              <label class="opened-label" for="opened">此日期或之後</label>
+              <input id="opened" type="date" aria-label="開張日期，此日期或之後">
+              <label class="opened-label" for="opened-to">此日期或之前</label>
+              <input id="opened-to" type="date" aria-label="開張日期，此日期或之前">
+              <div class="presets" id="opened-presets"></div>
+            </section>
+          </div>
+        </div>
+        <div class="filter-foot">
+          <button type="button" id="reset">清除</button>
+          <button type="button" id="filter-close">完成</button>
+        </div>
+      </div>
     </div>
     <p class="origin-note" id="origin-note"></p>
     <p class="shown" id="shown"></p>
@@ -257,7 +282,11 @@ const distancesEl = document.getElementById("distances");
 const statusesEl = document.getElementById("statuses");
 const bookingsEl = document.getElementById("bookings");
 const menusEl = document.getElementById("menus");
-const groupsEl = document.getElementById("groups");
+const filterPanel = document.getElementById("filter-panel");
+const filterToggle = document.getElementById("filter-toggle");
+const filterBadge = document.getElementById("filter-badge");
+let activeFilter = "district";
+let filterOpen = false;
 const sortEl = document.getElementById("sort");
 const searchEl = document.getElementById("q");
 const originEl = document.getElementById("origin");
@@ -278,6 +307,7 @@ const albumTitle = document.getElementById("album-title");
 const albumSort = document.getElementById("album-sort");
 const albumNote = document.getElementById("album-note");
 const openedEl = document.getElementById("opened");
+const openedToEl = document.getElementById("opened-to");
 const PAGE_SIZE = 60;
 const ALBUM_PAGE = 80;
 const ALBUM_LABELS = { menu: "餐牌", environment: "環境", food: "食物" };
@@ -286,7 +316,7 @@ let shownCount = PAGE_SIZE;
 const districtCatalog = [];
 const districtData = new Map();
 const selected = {
-  district: new Set([DEFAULT_DISTRICT]),
+  district: new Set(),
   status: new Set(),
   booking: new Set(),
   menu: new Set(),
@@ -295,6 +325,7 @@ const selected = {
   cuisine: new Set()
 };
 let openedOn = "";
+let openedUntil = "";
 let sortKey = "distance_asc";
 let holidaySet = new Set();
 const WEEKDAY_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
@@ -595,9 +626,16 @@ function matchesMenu(item) {
 }
 
 function matchesDistrict(item) {
-  if (!districtCatalog.length) return true;
-  if (!selected.district.size) return false;
+  if (!districtCatalog.length || !selected.district.size) return true;
   return selected.district.has(String(item.district || DEFAULT_DISTRICT));
+}
+
+function openedInRange(item) {
+  const opened = item.opened_on;
+  if (typeof opened !== "string" || !opened) return false;
+  if (openedOn && opened < openedOn) return false;
+  if (openedUntil && opened > openedUntil) return false;
+  return true;
 }
 
 function shiftMonths(ymd, delta) {
@@ -611,8 +649,8 @@ function shiftMonths(ymd, delta) {
 }
 
 function matchesOpened(item) {
-  if (!openedOn) return true;
-  return typeof item.opened_on === "string" && item.opened_on >= openedOn;
+  if (!openedOn && !openedUntil) return true;
+  return openedInRange(item);
 }
 
 function ratingValue(item) {
@@ -682,11 +720,17 @@ function visibleRestaurants() {
     .map(({ item }) => item);
 }
 
+function groupSelectionCount(group) {
+  if (group === "opened") return (openedOn ? 1 : 0) + (openedUntil ? 1 : 0);
+  return selected[group] ? selected[group].size : 0;
+}
+
 function setSummary(box, label) {
-  const summary = box.parentElement ? box.parentElement.querySelector("summary") : null;
-  if (!summary) return;
-  const count = selected[box.dataset.group] ? selected[box.dataset.group].size : 0;
-  summary.textContent = count ? label + " (" + count + ")" : label;
+  const group = box.dataset.group;
+  const tab = document.querySelector('.filter-tab[data-tab="' + group + '"]');
+  if (!tab) return;
+  const count = groupSelectionCount(group);
+  tab.textContent = count ? label + " (" + count + ")" : label;
 }
 
 function checkList(group, options) {
@@ -698,8 +742,9 @@ function checkList(group, options) {
 }
 
 function buildDistrictFilters() {
-  const group = document.getElementById("group-district");
-  if (group) group.hidden = districtCatalog.length === 0;
+  const tab = document.querySelector('.filter-tab[data-tab="district"]');
+  if (tab) tab.hidden = districtCatalog.length === 0;
+  if (tab && tab.hidden && activeFilter === "district") showFilterTab("cuisine");
   const options = districtCatalog.map(item => {
     const loaded = districtData.get(item.id);
     const count = loaded
@@ -748,13 +793,20 @@ function buildOpenedFilters() {
   const presets = document.getElementById("opened-presets");
   presets.innerHTML = OPENED_PRESETS.map(preset => {
     const date = shiftMonths(today, preset.months);
-    const count = pool.filter(item => typeof item.opened_on === "string" && item.opened_on >= date).length;
+    const count = pool.filter(item => {
+      const opened = item.opened_on;
+      if (typeof opened !== "string" || !opened || opened < date) return false;
+      if (openedUntil && opened > openedUntil) return false;
+      return true;
+    }).length;
     const on = openedOn === date ? " on" : "";
     return '<button type="button" class="preset' + on + '" data-opened="' + date + '">' + esc(preset.label) + " " + count + "</button>";
   }).join("");
   if (openedEl.value !== openedOn) openedEl.value = openedOn;
-  const summary = document.querySelector("#group-opened summary");
-  if (summary) summary.textContent = openedOn ? "開張日期 (1)" : "開張日期";
+  if (openedToEl.value !== openedUntil) openedToEl.value = openedUntil;
+  const tab = document.querySelector('.filter-tab[data-tab="opened"]');
+  const bounds = groupSelectionCount("opened");
+  if (tab) tab.textContent = bounds ? "開張日期 (" + bounds + ")" : "開張日期";
 }
 
 function buildPriceFilters() {
@@ -796,7 +848,7 @@ function buildStatusFilters() {
     count: counts[item.id] || 0
   }));
   statusesEl.innerHTML = checkList("status", options);
-  setSummary(statusesEl, "狀態");
+  setSummary(statusesEl, "營業狀態");
 }
 
 function buildBookingFilters() {
@@ -908,6 +960,21 @@ const moreObserver = new IntersectionObserver(entries => {
   if (entries.some(entry => entry.isIntersecting)) loadMore();
 }, { rootMargin: "600px" });
 
+function activeFilterCount() {
+  let count = 0;
+  FILTER_KEYS.forEach(key => {
+    count += selected[key] ? selected[key].size : 0;
+  });
+  count += groupSelectionCount("opened");
+  return count;
+}
+
+function syncFilterBadge() {
+  const count = activeFilterCount();
+  filterBadge.hidden = count === 0;
+  filterBadge.textContent = count ? String(count) : "";
+}
+
 function rebuildFilters() {
   buildDistrictFilters();
   buildStatusFilters();
@@ -917,6 +984,7 @@ function rebuildFilters() {
   buildCuisineFilters();
   buildPriceFilters();
   buildOpenedFilters();
+  syncFilterBadge();
 }
 
 function refreshControls() {
@@ -924,7 +992,7 @@ function refreshControls() {
   rebuildFilters();
   render();
   const where = origin.address ? origin.label + "（" + origin.address + "）" : origin.label;
-  originNote.textContent = "距離由「" + where + "」計算。同一組篩選可多選（或），不同組要同時符合。營業狀態按香港時間計算。";
+  originNote.textContent = "距離由「" + where + "」計算。同一組篩選可多選（或），沒有勾選代表全部。不同組要同時符合。營業狀態按香港時間計算。";
 }
 
 function writeFilters() {
@@ -933,13 +1001,14 @@ function writeFilters() {
     url.searchParams.delete(key);
     selected[key].forEach(value => url.searchParams.append(key, value));
   });
-  if (districtCatalog.length && !selected.district.size) url.searchParams.append("district", "");
   if (query) url.searchParams.set("q", query);
   else url.searchParams.delete("q");
   if (sortKey !== "distance_asc") url.searchParams.set("sort", sortKey);
   else url.searchParams.delete("sort");
   if (openedOn) url.searchParams.set("opened", openedOn);
   else url.searchParams.delete("opened");
+  if (openedUntil) url.searchParams.set("opened_to", openedUntil);
+  else url.searchParams.delete("opened_to");
   history.replaceState(history.state, "", url);
 }
 
@@ -959,45 +1028,41 @@ function readFilters() {
     sortEl.value = sort;
   }
   const opened = params.get("opened");
+  const openedTo = params.get("opened_to");
   openedOn = opened && /^\d{4}-\d{2}-\d{2}$/.test(opened) ? opened : "";
+  openedUntil = openedTo && /^\d{4}-\d{2}-\d{2}$/.test(openedTo) ? openedTo : "";
   openedEl.value = openedOn;
+  openedToEl.value = openedUntil;
 }
 
-function filterGroups() {
-  return [...document.querySelectorAll("details.group")].filter(group => !group.hidden);
-}
-
-function syncFilterToggle() {
-  const button = document.getElementById("filter-toggle");
-  const groups = filterGroups();
-  const open = groups.length > 0 && groups.every(group => group.open);
-  button.classList.toggle("open", open);
-  button.setAttribute("aria-expanded", open ? "true" : "false");
-  button.textContent = open ? "收合篩選" : "篩選";
-}
-
-function setAllGroups(open) {
-  filterGroups().forEach(group => {
-    group.open = open;
+function showFilterTab(id) {
+  activeFilter = id;
+  document.querySelectorAll(".filter-tab").forEach(tab => {
+    const on = tab.dataset.tab === id;
+    tab.classList.toggle("on", on);
+    tab.setAttribute("aria-selected", on ? "true" : "false");
   });
-  syncFilterToggle();
+  document.querySelectorAll(".filter-pane").forEach(pane => {
+    pane.classList.toggle("on", pane.dataset.pane === id);
+  });
 }
 
-function initGroupOpen() {
-  document.querySelectorAll("details.group").forEach(group => {
-    group.open = false;
-    group.addEventListener("toggle", syncFilterToggle);
-  });
-  syncFilterToggle();
+function setFilterOpen(open) {
+  filterOpen = open;
+  filterPanel.hidden = !open;
+  filterToggle.classList.toggle("open", open);
+  filterToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  document.body.classList.toggle("filter-open", open);
 }
 
 function resetFilters() {
   FILTER_KEYS.forEach(key => selected[key].clear());
-  if (districtCatalog.length) selected.district = new Set([DEFAULT_DISTRICT]);
   query = "";
   searchEl.value = "";
   openedOn = "";
+  openedUntil = "";
   openedEl.value = "";
+  openedToEl.value = "";
   writeFilters();
   const pending = districtCatalog.length ? ensureRestaurants() : Promise.resolve();
   pending.then(() => refreshControls()).catch(showLoadError);
@@ -1212,12 +1277,21 @@ document.getElementById("geo").addEventListener("click", () => {
 
 document.getElementById("reset").addEventListener("click", resetFilters);
 
-document.getElementById("filter-toggle").addEventListener("click", () => {
-  const groups = filterGroups();
-  setAllGroups(!groups.every(group => group.open));
+filterToggle.addEventListener("click", () => {
+  setFilterOpen(!filterOpen);
 });
 
-groupsEl.addEventListener("change", event => {
+document.getElementById("filter-close").addEventListener("click", () => {
+  setFilterOpen(false);
+});
+
+document.querySelector(".filter-tabs").addEventListener("click", event => {
+  const tab = event.target.closest(".filter-tab");
+  if (!tab || tab.hidden) return;
+  showFilterTab(tab.dataset.tab);
+});
+
+filterPanel.addEventListener("change", event => {
   const input = event.target;
   if (!(input instanceof HTMLInputElement) || input.type !== "checkbox") return;
   const group = input.dataset.group;
@@ -1243,6 +1317,12 @@ document.getElementById("opened-presets").addEventListener("click", event => {
 
 openedEl.addEventListener("change", () => {
   openedOn = /^\d{4}-\d{2}-\d{2}$/.test(openedEl.value) ? openedEl.value : "";
+  writeFilters();
+  refreshControls();
+});
+
+openedToEl.addEventListener("change", () => {
+  openedUntil = /^\d{4}-\d{2}-\d{2}$/.test(openedToEl.value) ? openedToEl.value : "";
   writeFilters();
   refreshControls();
 });
@@ -1506,7 +1586,11 @@ document.addEventListener("keydown", event => {
     else if (event.key === "ArrowRight") stepSlide(1);
     return;
   }
-  if (!album.hidden && event.key === "Escape") requestCloseAlbum();
+  if (!album.hidden && event.key === "Escape") {
+    requestCloseAlbum();
+    return;
+  }
+  if (filterOpen && event.key === "Escape") setFilterOpen(false);
 });
 let touchX = null;
 modal.addEventListener("touchstart", event => {
@@ -1621,7 +1705,7 @@ window.addEventListener("popstate", () => {
 origin = readOrigin();
 fillOriginSelect();
 readFilters();
-initGroupOpen();
+showFilterTab("district");
 
 function showLoadError(error) {
   updatedEl.textContent = "";
@@ -1633,16 +1717,16 @@ function showLoadError(error) {
 function applyDistrictSelection() {
   const params = new URLSearchParams(location.search);
   const known = new Set(districtCatalog.map(item => item.id));
-  if (!params.has("district")) {
-    const fallback = known.has(DEFAULT_DISTRICT) ? DEFAULT_DISTRICT : (districtCatalog[0] && districtCatalog[0].id);
-    selected.district = new Set(fallback ? [fallback] : []);
-    return;
-  }
   selected.district = new Set(params.getAll("district").filter(id => known.has(id)));
 }
 
+function activeDistrictIds() {
+  if (selected.district.size) return [...selected.district];
+  return districtCatalog.map(item => item.id);
+}
+
 async function ensureRestaurants() {
-  const wanted = [...selected.district];
+  const wanted = activeDistrictIds();
   await Promise.all(wanted.map(async id => {
     if (districtData.has(id)) return;
     const response = await fetch("./data/" + encodeURIComponent(id) + "/restaurants.json");
