@@ -197,7 +197,7 @@ footer.site p { margin: 0; }
     <p class="shown" id="shown"></p>
   </div>
 </header>
-<p class="status" id="status" hidden></p>
+<p class="status" id="status" hidden aria-live="polite"></p>
 <main id="grid"></main>
 <footer class="site"><p id="updated"></p></footer>
 <div id="album" class="album" hidden>
@@ -325,6 +325,13 @@ let restaurants = [];
 let shownCount = PAGE_SIZE;
 const districtCatalog = [];
 const districtData = new Map();
+const DISTRICT_STORE = "tst-restaurants-districts";
+const DISTRICT_FETCH_WIDTH = 3;
+let loadGeneration = 0;
+let loadAbort = new AbortController();
+let loadState = { done: 0, total: 0, failed: false, settled: true };
+let cardSignature = "";
+let linkedLayerOpened = false;
 const selected = {
   district: new Set(),
   status: new Set(),
@@ -962,14 +969,31 @@ function card(item) {
 function render() {
   const rows = visibleRestaurants();
   const slice = rows.slice(0, shownCount);
-  let html = slice.map(card).join("");
-  if (!slice.length) html = '<p class="empty">沒有符合條件的餐廳</p>';
-  else if (slice.length < rows.length) {
-    html += '<button type="button" id="more" class="more">顯示更多（' + slice.length + " / " + rows.length + "）</button>";
+  const loading = !loadState.settled && loadState.done < loadState.total;
+  const sliceKey = slice.map(item => item.poi_id).join(",");
+  const signature = sliceKey + "|" + (slice.length ? "" : (loading ? "L" : "E"));
+  const moreLabel = "顯示更多（" + slice.length + " / " + rows.length + "）";
+  if (signature !== cardSignature) {
+    cardSignature = signature;
+    let html = "";
+    if (!slice.length) html = '<p class="empty">' + (loading ? "載入中…" : "沒有符合條件的餐廳") + "</p>";
+    else {
+      html = slice.map(card).join("");
+      if (slice.length < rows.length) html += '<button type="button" id="more" class="more">' + moreLabel + "</button>";
+    }
+    grid.innerHTML = html;
+    const more = document.getElementById("more");
+    if (more) moreObserver.observe(more);
+  } else {
+    const more = document.getElementById("more");
+    const needMore = slice.length > 0 && slice.length < rows.length;
+    if (needMore && more) more.textContent = moreLabel;
+    else if (needMore) {
+      cardSignature = "";
+      render();
+      return;
+    } else if (more) more.remove();
   }
-  grid.innerHTML = html;
-  const more = document.getElementById("more");
-  if (more) moreObserver.observe(more);
   const withMenu = rows.filter(item => photoCounts(item).menu > 0).length;
   shownEl.textContent = "顯示 " + slice.length + " / " + rows.length + " 間 · 有餐牌 " + withMenu + " 間";
 }
@@ -1088,12 +1112,14 @@ function resetFilters() {
   openedUntil = "";
   openedEl.value = "";
   openedToEl.value = "";
+  writeStoredDistricts();
   writeFilters();
-  const pending = districtCatalog.length ? ensureRestaurants() : Promise.resolve();
-  pending.then(() => refreshControls()).catch(showLoadError);
+  if (districtCatalog.length) ensureRestaurants().catch(showLoadError);
+  else refreshControls();
 }
 
 function refreshLiveStatus() {
+  cardSignature = "";
   rebuildFilters();
   render();
 }
@@ -1325,8 +1351,9 @@ filterPanel.addEventListener("change", event => {
   else selected[group].delete(input.value);
   writeFilters();
   if (group === "district") {
+    writeStoredDistricts();
     applyDefaultOrigin();
-    ensureRestaurants().then(() => refreshControls()).catch(showLoadError);
+    ensureRestaurants().catch(showLoadError);
     return;
   }
   refreshControls();
@@ -1739,39 +1766,59 @@ function showLoadError(error) {
     (error && error.message ? " " + error.message : "");
 }
 
+function readStoredDistricts() {
+  try {
+    const raw = localStorage.getItem(DISTRICT_STORE);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(id => typeof id === "string" && id);
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeStoredDistricts() {
+  try {
+    localStorage.setItem(DISTRICT_STORE, JSON.stringify([...selected.district]));
+  } catch (error) {
+    /* private mode */
+  }
+}
+
 function applyDistrictSelection() {
   const params = new URLSearchParams(location.search);
   const known = new Set(districtCatalog.map(item => item.id));
-  selected.district = new Set(params.getAll("district").filter(id => known.has(id)));
+  if (params.has("district")) {
+    selected.district = new Set(params.getAll("district").filter(id => known.has(id)));
+    return;
+  }
+  selected.district = new Set(readStoredDistricts().filter(id => known.has(id)));
 }
 
-function activeDistrictIds() {
-  if (selected.district.size) return [...selected.district];
-  return districtCatalog.map(item => item.id);
+function districtLoadOrder() {
+  const catalogIds = districtCatalog.map(item => item.id);
+  const known = new Set(catalogIds);
+  if (selected.district.size) {
+    const picked = [...selected.district].filter(id => known.has(id));
+    if (picked.length) return picked;
+  }
+  const first = known.has(DEFAULT_DISTRICT) ? DEFAULT_DISTRICT : catalogIds[0];
+  if (!first) return [];
+  return [first, ...catalogIds.filter(id => id !== first)];
 }
 
-async function ensureRestaurants() {
-  const wanted = activeDistrictIds();
-  await Promise.all(wanted.map(async id => {
-    if (districtData.has(id)) return;
-    const response = await fetch(sitePath("data/" + encodeURIComponent(id) + "/restaurants.json"));
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const payload = await response.json();
-    const list = Array.isArray(payload.restaurants) ? payload.restaurants : [];
-    list.forEach(item => {
-      if (!item.district) item.district = id;
-    });
-    districtData.set(id, { restaurants: list, meta: payload.meta || {} });
-  }));
-  restaurants = wanted.flatMap(id => {
+function publishRestaurants(order) {
+  restaurants = order.flatMap(id => {
     const loaded = districtData.get(id);
     return loaded ? loaded.restaurants : [];
   });
   const holidays = new Set();
   let updated = "";
-  wanted.forEach(id => {
+  order.forEach(id => {
     const loaded = districtData.get(id);
-    const meta = loaded ? loaded.meta : {};
+    if (!loaded) return;
+    const meta = loaded.meta || {};
     const days = Array.isArray(meta.public_holidays) ? meta.public_holidays : [];
     days.forEach(day => {
       if (typeof day === "string") holidays.add(day);
@@ -1781,6 +1828,110 @@ async function ensureRestaurants() {
   holidaySet = holidays;
   const formatted = formatUpdated(updated);
   updatedEl.textContent = formatted ? "資料更新：" + formatted + " HKT" : "";
+  loadState.done = order.filter(id => districtData.has(id)).length;
+  loadState.total = order.length;
+}
+
+function syncLoadStatus() {
+  if (loadState.settled && !loadState.failed) {
+    statusEl.hidden = true;
+    statusEl.textContent = "";
+    return;
+  }
+  const parts = [];
+  if (!loadState.settled) parts.push("載入地區 " + loadState.done + "/" + loadState.total);
+  if (loadState.failed) parts.push("部分地區讀取失敗");
+  statusEl.hidden = false;
+  statusEl.textContent = parts.join(" · ");
+}
+
+function paintFromLoad(order, resetPage) {
+  publishRestaurants(order);
+  if (resetPage) refreshControls();
+  else {
+    rebuildFilters();
+    render();
+  }
+  syncLoadStatus();
+}
+
+async function fetchDistrict(id, ticket) {
+  if (districtData.has(id)) return;
+  const response = await fetch(sitePath("data/" + encodeURIComponent(id) + "/restaurants.json"), {
+    signal: ticket.signal
+  });
+  if (!response.ok) throw new Error("HTTP " + response.status);
+  const payload = await response.json();
+  if (ticket.generation !== loadGeneration) return;
+  const list = Array.isArray(payload.restaurants) ? payload.restaurants : [];
+  list.forEach(item => {
+    if (!item.district) item.district = id;
+  });
+  districtData.set(id, { restaurants: list, meta: payload.meta || {} });
+}
+
+async function maybeOpenLinkedLayer() {
+  if (linkedLayerOpened) return;
+  const hash = hashParams();
+  const poi = hash.get("album") || hash.get("cover");
+  if (!poi) {
+    linkedLayerOpened = true;
+    return;
+  }
+  if (!findById(poi)) return;
+  linkedLayerOpened = true;
+  await openLinkedLayer();
+}
+
+async function ensureRestaurants() {
+  const generation = ++loadGeneration;
+  loadAbort.abort();
+  loadAbort = new AbortController();
+  const ticket = { generation, signal: loadAbort.signal };
+  const order = districtLoadOrder();
+  loadState = { done: 0, total: order.length, failed: false, settled: false };
+  paintFromLoad(order, true);
+  const missing = order.filter(id => !districtData.has(id));
+  if (!missing.length) {
+    loadState.settled = true;
+    syncLoadStatus();
+    await maybeOpenLinkedLayer();
+    return;
+  }
+  try {
+    await fetchDistrict(missing[0], ticket);
+  } catch (error) {
+    if (ticket.generation !== loadGeneration || error.name === "AbortError") return;
+    loadState.failed = true;
+  }
+  if (ticket.generation !== loadGeneration) return;
+  paintFromLoad(order, false);
+  await maybeOpenLinkedLayer();
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  if (ticket.generation !== loadGeneration) return;
+  const rest = missing.slice(1);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(DISTRICT_FETCH_WIDTH, rest.length) }, async () => {
+    while (cursor < rest.length) {
+      if (ticket.generation !== loadGeneration) return;
+      const id = rest[cursor];
+      cursor += 1;
+      try {
+        await fetchDistrict(id, ticket);
+      } catch (error) {
+        if (ticket.generation !== loadGeneration || error.name === "AbortError") return;
+        loadState.failed = true;
+      }
+      if (ticket.generation !== loadGeneration) return;
+      paintFromLoad(order, false);
+      await maybeOpenLinkedLayer();
+    }
+  });
+  await Promise.all(workers);
+  if (ticket.generation !== loadGeneration) return;
+  loadState.settled = true;
+  paintFromLoad(order, false);
+  await maybeOpenLinkedLayer();
 }
 
 fetch(sitePath("data/districts.json"))
@@ -1792,13 +1943,12 @@ fetch(sitePath("data/districts.json"))
     const list = payload && Array.isArray(payload.districts) ? payload.districts : [];
     districtCatalog.splice(0, districtCatalog.length, ...list.filter(item => item && item.id && item.name));
     applyDistrictSelection();
+    if (!new URLSearchParams(location.search).has("district") && selected.district.size) writeFilters();
     applyDefaultOrigin();
     return ensureRestaurants();
   })
   .then(() => {
-    refreshControls();
     setInterval(refreshLiveStatus, 60000);
-    return openLinkedLayer();
   })
   .catch(showLoadError);
 </script>

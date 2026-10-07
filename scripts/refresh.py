@@ -1429,7 +1429,6 @@ def base_record(row: dict) -> dict:
     shorten = row.get("shortenUrl") if isinstance(row.get("shortenUrl"), str) else ""
     smile = row.get("scoreSmile")
     cry = row.get("scoreCry")
-    overall = row.get("scoreOverall")
     bookable, booking_url = booking_fields(row)
     return {
         "poi_id": poi_id,
@@ -1443,7 +1442,6 @@ def base_record(row: dict) -> dict:
         "lng": coord(row.get("mapLongitude"), 113.9, 114.25),
         "score_smile": smile if isinstance(smile, int) else 0,
         "score_cry": cry if isinstance(cry, int) else 0,
-        "score_overall": overall if isinstance(overall, (int, float)) and not isinstance(overall, bool) else None,
         "url": restaurant_url(call_name, poi_id, shorten),
         "district": ACTIVE["id"],
         "cover": cover_url(row),
@@ -1504,7 +1502,9 @@ def fill_missing_covers() -> None:
             record["cover"] = url
             filled += 1
         if filled:
-            write_json(path, payload)
+            for record in records:
+                record.pop("score_overall", None)
+            write_compact_json(path, payload)
         log(f"covers {district_dir.name} filled={filled}")
 
 
@@ -1538,8 +1538,10 @@ def publish(records: list[dict]) -> None:
         },
         "restaurants": records,
     }
+    for record in records:
+        record.pop("score_overall", None)
     with _publish_lock:
-        write_json(DATA_PATH, payload)
+        write_compact_json(DATA_PATH, payload)
         sync_district_catalog(len(records))
 
 

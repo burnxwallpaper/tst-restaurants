@@ -1,6 +1,6 @@
 # 尖沙咀 午餐餐廳
 
-尖沙咀 OpenRice 全部餐廳（`districtId=2008`）。店面、餐牌、環境、食物相片都連到 OpenRice，不放圖片檔進這個倉庫。頁面先讀 `data/districts.json`，再讀勾選地區的 `data/{district}/restaurants.json`。沒有勾選地區時讀全部地區。搜尋列在頁面最上方。頁尾是手動更新時間（`資料更新：YYYY-MM-DD HH:mm HKT`）。
+尖沙咀 OpenRice 全部餐廳（`districtId=2008`）。店面、餐牌、環境、食物相片都連到 OpenRice，不放圖片檔進這個倉庫。頁面先讀 `data/districts.json`，先載入第一個地區並顯示卡片，其餘地區在背景載入後合併。網址的 `district` 或瀏覽器記住的地區優先；都沒有時先載入尖沙咀。沒有勾選地區時最終仍載入全部；有勾選時只載入那些地區。搜尋列在頁面最上方。頁尾是手動更新時間（`資料更新：YYYY-MM-DD HH:mm HKT`）。
 
 網站：https://burnxwallpaper.github.io/tst-restaurants/
 
@@ -18,7 +18,7 @@ python -m http.server 8080
 
 ## 資料
 
-`data/districts.json` 列出地區（`id`、名稱、OpenRice `openrice_district_id`、預設距離起點）。每個地區的餐廳在 `data/{district}/restaurants.json`，形狀是 `{ "meta", "restaurants" }`。距離不寫進 JSON，由頁面用緯度經度現算。
+`data/districts.json` 列出地區（`id`、名稱、OpenRice `openrice_district_id`、預設距離起點）。每個地區的餐廳在 `data/{district}/restaurants.json`，形狀是 `{ "meta", "restaurants" }`，檔案是單行 JSON。距離不寫進 JSON，由頁面用緯度經度現算。頁面不用 `score_overall`，所以不寫進這份檔。
 
 `meta` 包含 `updated_at`（香港時間，手動跑腳本才會變）、`card_count`、`menu_count` / `menu_image_count`、`environment_count` / `environment_image_count`、`food_count` / `food_image_count`、`hours_count`、`bookable_count`、`opened_count`、`public_holidays`（1823 香港公眾假期，`YYYY-MM-DD`）。
 
