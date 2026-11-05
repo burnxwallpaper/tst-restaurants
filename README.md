@@ -1,6 +1,6 @@
 # 尖沙咀 午餐餐廳
 
-尖沙咀 OpenRice 全部餐廳（`districtId=2008`）。店面、餐牌、環境、食物相片都連到 OpenRice，不放圖片檔進這個倉庫。頁面先讀 `data/districts.json`，先載入第一個地區並顯示卡片，其餘地區在背景載入後合併。網址的 `district` 或瀏覽器記住的地區優先；都沒有時先載入尖沙咀。沒有勾選地區時最終仍載入全部；有勾選時只載入那些地區。搜尋列在頁面最上方。頁尾是手動更新時間（`資料更新：YYYY-MM-DD HH:mm HKT`）。
+尖沙咀 OpenRice 營業中的餐廳（`districtId=2008`）。店面、餐牌、環境、食物相片都連到 OpenRice，不放圖片檔進這個倉庫。已結業和已搬遷（二搬）不會出現；搬去仍在收錄地區的店只留新舖。頁面先讀 `data/districts.json`，先載入第一個地區並顯示卡片，其餘地區在背景載入後合併。網址的 `district` 或瀏覽器記住的地區優先；都沒有時先載入尖沙咀。沒有勾選地區時最終仍載入全部；有勾選時只載入那些地區。搜尋列在頁面最上方。頁尾是手動更新時間（`資料更新：YYYY-MM-DD HH:mm HKT`）。
 
 網站：https://burnxwallpaper.github.io/tst-restaurants/
 
@@ -20,7 +20,9 @@ python -m http.server 8080
 
 `data/districts.json` 列出地區（`id`、名稱、OpenRice `openrice_district_id`、預設距離起點）。每個地區的餐廳在 `data/{district}/restaurants.json`，形狀是 `{ "meta", "restaurants" }`，檔案是單行 JSON。距離不寫進 JSON，由頁面用緯度經度現算。頁面不用 `score_overall`，所以不寫進這份檔。
 
-`meta` 包含 `updated_at`（香港時間，手動跑腳本才會變）、`card_count`、`menu_count` / `menu_image_count`、`environment_count` / `environment_image_count`、`food_count` / `food_image_count`、`hours_count`、`bookable_count`、`opened_count`、`public_holidays`（1823 香港公眾假期，`YYYY-MM-DD`）。
+`meta` 包含 `updated_at`（香港時間，手動跑腳本才會變）、`card_count`、`menu_count` / `menu_image_count`、`environment_count` / `environment_image_count`、`food_count` / `food_image_count`、`hours_count`、`bookable_count`、`opened_count`、`excluded_closed` / `excluded_relocated`（這次搜尋結果裡被略過的已結業、已搬遷間數）、`public_holidays`（1823 香港公眾假期，`YYYY-MM-DD`）。
+
+OpenRice 搜尋列的 `status` 10 是營業中，3 是已結業，4 或 `moveToId` 是已搬遷。`refresh.py` 寫檔時會略過後兩種。頁面再擋名稱或 `openrice_status` / `move_to_id` 標成結業、搬遷的卡片。餐廳 JSON 的網址帶上該區 `card_count`，避免瀏覽器沿用舊檔。
 
 每間餐廳有名稱、菜式、人均價錢、地址、`lat` / `lng`、`district`、OpenRice 好評／負評、店面圖網址 `cover`（OpenRice 門口相；沒有門口相時用第一張環境相，否則餐牌，否則食物，再沒有就是空字串）、`photo_counts`（`menu`、`environment`、`food`，是 OpenRice 總數）、`hours`、`bookable`、`booking_url`、`opened_on`。排序在搜尋列旁，可用距離、開張日期、好評數、OpenRice 好評比例和價錢；缺少該欄的餐廳排在最後。網址用 `sort` 記住，預設是距離由近到遠。相片清單不放在這份主檔。有相片的餐廳另有 `data/{district}/photos/{poiId}.json`，三個陣列 `menu`、`environment`、`food` 各最多最新 50 張，並有 `menu_total`、`environment_total`、`food_total`。每張有 `full`、`time`（OpenRice `submitTime`）、可選的 `caption` 和 `source`。縮圖是把 `full` 的尺寸碼換成 `sx`。卡片地址連到 Google 地圖（有座標用緯度經度，否則用名稱加地址）。「Google 評分」連到以名稱加地址搜尋的 Google 地圖，評分不寫進 JSON。
 

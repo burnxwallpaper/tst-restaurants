@@ -7,6 +7,9 @@ Covers, 餐牌, 環境, and 食物 are hotlinked. Each restaurant keeps the newe
 restaurant file are the OpenRice totals. Google ratings are not stored.
 Distance is not stored. Opening hours come from search poiHours.
 Online booking is TableMap.
+Search rows that are closed (status 3, 已結業) or relocated (status 4 or
+moveToId, 已搬遷 / 二搬) are left out. A move keeps the new poi when that
+listing is still operating inside a covered district.
 """
 
 from __future__ import annotations
@@ -118,6 +121,9 @@ MEAL_ORDER = ("早市", "午市", "下午茶", "晚市")
 MENU_WORD = re.compile(r"餐牌|菜單|menu|套餐|set\s*menu|價錢", re.I)
 PRICE_TOKEN = re.compile(r"(?:HK\$|\$)\s?\d{2,4}")
 REVIEW_WORD = re.compile(r"則評論|reviews?", re.I)
+# OpenRice search: 10 operating, 3 已結業, 4 已搬遷 (moveToId is the new poi).
+CLOSED_LISTING = re.compile(r"已結業|（結業）|\(結業\)|now\s*closed|permanently\s*closed", re.I)
+MOVED_LISTING = re.compile(r"已搬遷|（搬遷）|\(搬遷\)|二搬")
 DISTRICTS = {
     "tst": {
         "id": "tst",
@@ -556,6 +562,18 @@ def self_check() -> None:
     )
     if not bookable or not url or disabled or disabled_url:
         raise SystemExit("booking flag failed")
+    if listing_exclusion({"status": 10, "moveToId": 0, "name": "Milu Thai", "statusRemark": "前身為 逸軒"}) is not None:
+        raise SystemExit("listing: operating row was excluded")
+    if listing_exclusion({"status": 4, "moveToId": 1024360, "name": "Palco Ristorante", "statusRemark": ""}) != "relocated":
+        raise SystemExit("listing: moved status was kept")
+    if listing_exclusion({"status": 10, "moveToId": 12, "name": "舊舖", "statusRemark": ""}) != "relocated":
+        raise SystemExit("listing: moveToId was kept")
+    if listing_exclusion({"status": 3, "moveToId": 0, "name": "超人燒鵝", "statusRemark": ""}) != "closed":
+        raise SystemExit("listing: closed status was kept")
+    if listing_exclusion({"status": 10, "moveToId": 0, "name": "八時神仙草", "statusRemark": "已結業"}) != "closed":
+        raise SystemExit("listing: closed remark was kept")
+    if listing_exclusion({"status": 10, "moveToId": 0, "name": "二搬小店", "statusRemark": ""}) != "relocated":
+        raise SystemExit("listing: moved name was kept")
     log(f"self-check ok ({len(cases)} meal cases)")
 
 
@@ -911,6 +929,28 @@ def search_page(start_at: int, *, use_cache: bool, price_range_id: int | None = 
     return payload
 
 
+def listing_exclusion(row: dict) -> str | None:
+    """Return 'closed' or 'relocated' when this search row stays off the site.
+
+    Status 10 is operating. Status 4 and a positive moveToId are 已搬遷: the
+    successor poi is its own row, so the old address is not listed again.
+    Status 3 is 已結業. Name and statusRemark are only a backup for those words.
+    """
+    status = row.get("status")
+    status_num = status if isinstance(status, int) and not isinstance(status, bool) else None
+    move_to = row.get("moveToId")
+    moved = isinstance(move_to, int) and not isinstance(move_to, bool) and move_to > 0
+    name = row.get("name") if isinstance(row.get("name"), str) else ""
+    remark = row.get("statusRemark") if isinstance(row.get("statusRemark"), str) else ""
+    if status_num == 4 or moved or MOVED_LISTING.search(name):
+        return "relocated"
+    if status_num != 10 and MOVED_LISTING.search(remark):
+        return "relocated"
+    if status_num == 3 or CLOSED_LISTING.search(f"{name}\n{remark}"):
+        return "closed"
+    return None
+
+
 def search_results(page: dict) -> list[dict]:
     pagination = page.get("paginationResult")
     if isinstance(pagination, dict):
@@ -969,7 +1009,7 @@ def paginate(
     return chosen, reported
 
 
-def collect_rows(target: int, max_scan: int, *, use_cache: bool) -> list[dict]:
+def collect_rows(target: int, max_scan: int, *, use_cache: bool) -> tuple[list[dict], dict[str, int]]:
     seen: set[int] = set()
     chosen, reported = paginate(seen, use_cache=use_cache, price_range_id=None, max_scan=max_scan)
     if reported is not None and len(chosen) < reported:
@@ -981,10 +1021,26 @@ def collect_rows(target: int, max_scan: int, *, use_cache: bool) -> list[dict]:
             chosen.extend(extra)
             if len(chosen) >= reported:
                 break
+    kept: list[dict] = []
+    excluded = {"closed": 0, "relocated": 0}
+    other: dict[str, int] = {}
+    for row in chosen:
+        reason = listing_exclusion(row)
+        if reason == "closed" or reason == "relocated":
+            excluded[reason] += 1
+            continue
+        status = row.get("status")
+        if isinstance(status, int) and not isinstance(status, bool) and status != 10:
+            key = str(status)
+            other[key] = other.get(key, 0) + 1
+        kept.append(row)
     if target > 0:
-        chosen = chosen[:target]
-    log(f"search kept {len(chosen)} restaurants reported={reported}")
-    return chosen
+        kept = kept[:target]
+    log(
+        f"search kept {len(kept)} excluded_closed={excluded['closed']} "
+        f"excluded_relocated={excluded['relocated']} other_status={other} reported={reported}"
+    )
+    return kept, excluded
 
 
 def empty_photo_counts() -> dict[str, int]:
@@ -1508,7 +1564,23 @@ def fill_missing_covers() -> None:
         log(f"covers {district_dir.name} filled={filled}")
 
 
-def publish(records: list[dict]) -> None:
+def exclusion_meta(excluded: dict[str, int] | None) -> dict[str, int]:
+    if excluded is not None:
+        return {
+            "excluded_closed": excluded.get("closed", 0),
+            "excluded_relocated": excluded.get("relocated", 0),
+        }
+    previous = read_json(DATA_PATH) or {}
+    meta = previous.get("meta") if isinstance(previous.get("meta"), dict) else {}
+    kept: dict[str, int] = {}
+    for key in ("excluded_closed", "excluded_relocated"):
+        value = meta.get(key) if isinstance(meta, dict) else None
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            kept[key] = value
+    return kept
+
+
+def publish(records: list[dict], *, excluded: dict[str, int] | None = None) -> None:
     menu_images = sum(photo_count(row, "menu") for row in records)
     environment_images = sum(photo_count(row, "environment") for row in records)
     food_images = sum(photo_count(row, "food") for row in records)
@@ -1533,6 +1605,7 @@ def publish(records: list[dict]) -> None:
             "bookable_count": bookable_count,
             "opened_count": opened_count,
             "public_holidays": PUBLIC_HOLIDAYS,
+            **exclusion_meta(excluded),
             "source": "OpenRice",
             "source_url": f"https://www.openrice.com/zh/hongkong/restaurants?districtId={district_id}",
         },
@@ -1582,6 +1655,18 @@ def site_megabytes() -> float:
     return total / 1_000_000
 
 
+def prune_unused_photos(keep: set[int]) -> int:
+    """Drop photo files for pois no longer published in this district."""
+    if not PHOTO_DIR.is_dir():
+        return 0
+    removed = 0
+    for path in PHOTO_DIR.glob("*.json"):
+        if not path.stem.isdigit() or int(path.stem) not in keep:
+            path.unlink()
+            removed += 1
+    return removed
+
+
 def drop_local_menus() -> int:
     if not MENUS.exists():
         return 0
@@ -1594,11 +1679,11 @@ def drop_local_menus() -> int:
 
 def refresh(target: int, max_scan: int, workers: int, *, use_cache: bool) -> None:
     load_holidays(use_cache=use_cache)
-    rows = collect_rows(target, max_scan, use_cache=use_cache)
+    rows, excluded = collect_rows(target, max_scan, use_cache=use_cache)
     if not rows:
         raise SystemExit("no restaurants")
     shells = [base_record(row) for row in rows]
-    publish(shells)
+    publish(shells, excluded=excluded)
     ordered = {record["poi_id"]: record for record in shells}
     order = [record["poi_id"] for record in shells]
     state_lock = threading.Lock()
@@ -1617,7 +1702,7 @@ def refresh(target: int, max_scan: int, workers: int, *, use_cache: bool) -> Non
                 since_publish = 0
                 snapshot = [ordered[item] for item in order]
         if snapshot is not None:
-            publish(snapshot)
+            publish(snapshot, excluded=excluded)
 
     def enrich_openrice(row: dict) -> tuple[str, int, str, dict]:
         poi_id = row["poiId"]
@@ -1647,7 +1732,8 @@ def refresh(target: int, max_scan: int, workers: int, *, use_cache: bool) -> Non
     removed_flat = drop_old_flat_images()
     removed_menus = drop_local_menus()
     final = [ordered[poi_id] for poi_id in order]
-    publish(final)
+    publish(final, excluded=excluded)
+    pruned_photos = prune_unused_photos({row["poi_id"] for row in final})
     menu_images = sum(photo_count(row, "menu") for row in final)
     environment_images = sum(photo_count(row, "environment") for row in final)
     food_images = sum(photo_count(row, "food") for row in final)
@@ -1657,7 +1743,8 @@ def refresh(target: int, max_scan: int, workers: int, *, use_cache: bool) -> Non
         f"DONE restaurants={len(final)} menus={menu_images} environment={environment_images} "
         f"food={food_images} hours={with_hours} bookable={bookable_count} "
         f"removed_flat={removed_flat} removed_menus={removed_menus} "
-        f"site_mb={site_megabytes():.1f}"
+        f"excluded_closed={excluded['closed']} excluded_relocated={excluded['relocated']} "
+        f"pruned_photos={pruned_photos} site_mb={site_megabytes():.1f}"
     )
 
 

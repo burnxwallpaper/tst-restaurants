@@ -717,6 +717,15 @@ function compareMissingLast(left, right) {
   return ascending ? left - right : right - left;
 }
 
+function listingHidden(item) {
+  if (!item || typeof item !== "object") return true;
+  if (item.openrice_status === 3 || item.openrice_status === 4) return true;
+  if (typeof item.move_to_id === "number" && item.move_to_id > 0) return true;
+  const name = typeof item.name === "string" ? item.name : "";
+  return /已結業|（結業）|\(結業\)|now closed|permanently closed/i.test(name)
+    || /已搬遷|（搬遷）|\(搬遷\)|二搬/.test(name);
+}
+
 function rowMatches(item, exclude) {
   return matchesQuery(item)
     && (exclude === "district" || matchesDistrict(item))
@@ -1857,13 +1866,15 @@ function paintFromLoad(order, resetPage) {
 
 async function fetchDistrict(id, ticket) {
   if (districtData.has(id)) return;
-  const response = await fetch(sitePath("data/" + encodeURIComponent(id) + "/restaurants.json"), {
+  const entry = districtCatalog.find(item => item.id === id);
+  const version = entry && typeof entry.card_count === "number" ? String(entry.card_count) : "";
+  const response = await fetch(sitePath("data/" + encodeURIComponent(id) + "/restaurants.json") + (version ? "?v=" + encodeURIComponent(version) : ""), {
     signal: ticket.signal
   });
   if (!response.ok) throw new Error("HTTP " + response.status);
   const payload = await response.json();
   if (ticket.generation !== loadGeneration) return;
-  const list = Array.isArray(payload.restaurants) ? payload.restaurants : [];
+  const list = (Array.isArray(payload.restaurants) ? payload.restaurants : []).filter(item => !listingHidden(item));
   list.forEach(item => {
     if (!item.district) item.district = id;
   });
